@@ -1,4 +1,4 @@
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { useApi } from "../lib/useApi";
 import { thb } from "../lib/format";
 import type { Transaction } from "../lib/types";
@@ -9,11 +9,11 @@ import { Link } from "../lib/router";
 export function HistoryPage() {
   const { data, error, loading, reload } = useApi<{ transactions: Transaction[] }>("/api/transactions");
   const [open, setOpen] = useState<Set<string>>(new Set());
-  const [flash] = useState(() => {
-    const msg = sessionStorage.getItem("moneylog.flash");
+  // Read the one-time "saved" message; remove it in an effect (StrictMode runs initializers twice).
+  const [flash] = useState(() => sessionStorage.getItem("moneylog.flash"));
+  useEffect(() => {
     sessionStorage.removeItem("moneylog.flash");
-    return msg;
-  });
+  }, []);
   const toggle = (id: string) =>
     setOpen((s) => {
       const n = new Set(s);
