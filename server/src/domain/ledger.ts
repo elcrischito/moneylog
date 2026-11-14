@@ -231,3 +231,41 @@ export function validateTransaction(input: unknown, accounts: Map<string, Ledger
     value: { kind, date: body.date as string, description: (description as string).trim(), primaryAccountId: primary.id, total: total.value, lines },
   };
 }
+
+// ---------------------------------------------------------------------------
+// F-07: income and expense summary (BR-12). Only lines on INCOME and EXPENSE
+// accounts count, so transfers, borrowing, lending, loan/card repayments and
+// opening balances can never appear as income or expense.
+// ---------------------------------------------------------------------------
+export interface AccountAmount {
+  accountId: string;
+  amount: number;
+}
+export interface Summary {
+  income: { total: number; byAccount: AccountAmount[] };
+  expense: { total: number; byAccount: AccountAmount[] };
+  net: number;
+}
+
+export function summarize(transactions: LedgerTransaction[], accounts: Map<string, LedgerAccount>, from: string, to: string): Summary {
+  const income = new Map<string, number>();
+  const expense = new Map<string, number>();
+  for (const t of transactions) {
+    if (t.date < from || t.date > to) continue; // inclusive bounds
+    for (const l of t.lines) {
+      const type = accounts.get(l.accountId)?.type;
+      if (type === "INCOME") income.set(l.accountId, (income.get(l.accountId) ?? 0) + l.amount);
+      if (type === "EXPENSE") expense.set(l.accountId, (expense.get(l.accountId) ?? 0) + l.amount);
+    }
+  }
+  const sorted = (m: Map<string, number>) =>
+    [...m.entries()].filter(([, v]) => v !== 0).map(([accountId, amount]) => ({ accountId, amount })).sort((a, b) => b.amount - a.amount);
+  const sum = (m: Map<string, number>) => [...m.values()].reduce((s, v) => s + v, 0);
+  const incomeTotal = sum(income);
+  const expenseTotal = sum(expense);
+  return {
+    income: { total: incomeTotal, byAccount: sorted(income) },
+    expense: { total: expenseTotal, byAccount: sorted(expense) },
+    net: incomeTotal - expenseTotal,
+  };
+}

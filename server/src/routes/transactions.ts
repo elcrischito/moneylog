@@ -1,13 +1,13 @@
-// F-05 / F-06 record transactions (and F-08 history in a later PR)
+// F-05 / F-06 record transactions and F-08 history
 // Contract docs/sprints/sprint-1/F-05-F-06-record-transactions.md
 // Mounted behind requireAuth + requireRole("USER").
 import { Router } from "express";
 import { prisma } from "../prisma";
-import { AppError, asyncHandler } from "../http/errors";
+import { AppError, asyncHandler, notFound } from "../http/errors";
 import { validateTransaction } from "../domain/ledger";
 import { todayInBangkok, toDbDate } from "../domain/dates";
 import { toLedgerAccount } from "../services/ledgerData";
-import { loadTransactionDto } from "../services/transactionDto";
+import { loadTransactionDto, transactionDto, TRANSACTION_INCLUDE } from "../services/transactionDto";
 
 export const transactionsRouter = Router();
 
@@ -36,5 +36,30 @@ transactionsRouter.post(
       }),
     );
     res.status(201).json({ transaction: await loadTransactionDto(ownerId, created.id) });
+  }),
+);
+
+// F-08 history: own transactions only, newest first (BR-01).
+transactionsRouter.get(
+  "/",
+  asyncHandler(async (req, res) => {
+    const requested = Number(req.query.limit);
+    const take = Number.isInteger(requested) && requested > 0 ? Math.min(requested, 200) : 50;
+    const rows = await prisma.transaction.findMany({
+      where: { ownerId: req.user!.id },
+      include: TRANSACTION_INCLUDE,
+      orderBy: [{ date: "desc" }, { createdAt: "desc" }],
+      take,
+    });
+    res.json({ transactions: rows.map(transactionDto) });
+  }),
+);
+
+transactionsRouter.get(
+  "/:id",
+  asyncHandler(async (req, res) => {
+    const transaction = await loadTransactionDto(req.user!.id, req.params.id);
+    if (!transaction) throw notFound("Transaction"); // other users' ids look like unknown ids
+    res.json({ transaction });
   }),
 );

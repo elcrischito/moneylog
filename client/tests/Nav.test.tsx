@@ -14,7 +14,9 @@ function signedInAs(role: "USER" | "ADMIN") {
         ? { users: [] }
         : path.startsWith("/api/accounts")
           ? { accounts: [], totals: { cash: "0.00", creditCardDebt: "0.00", loansTaken: "0.00", loansGiven: "0.00" } }
-          : {};
+          : path.startsWith("/api/summary")
+            ? { from: "2026-11-01", to: "2026-11-14", income: { total: "0.00", byAccount: [] }, expense: { total: "0.00", byAccount: [] }, net: "0.00" }
+            : {};
     return new Response(JSON.stringify(body), { status: 200, headers: { "Content-Type": "application/json" } });
   }) as typeof fetch;
 }
