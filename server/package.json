@@ -10,7 +10,8 @@
     "prisma:migrate": "prisma migrate deploy",
     "prisma:seed": "tsx prisma/seed.ts",
     "test": "vitest run",
-    "test:unit": "vitest run tests/unit"
+    "test:unit": "vitest run tests/unit",
+    "demo:reset": "tsx prisma/reset-demo.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
