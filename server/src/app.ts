@@ -5,6 +5,9 @@ import path from "path";
 import { prisma } from "./prisma";
 import { config } from "./config";
 import { errorHandler } from "./http/errors";
+import { authRouter } from "./routes/auth";
+import { requireAuth, requireRole } from "./middleware/auth";
+import "./auth/types";
 
 export function createApp() {
   const app = express();
@@ -25,6 +28,13 @@ export function createApp() {
       res.status(503).json({ status: "not_ready", db: "unreachable" });
     }
   });
+
+  app.use("/api/auth", authRouter);
+
+  // Access foundation (System SDS §5): administrator routes are ADMIN only and every
+  // financial route is USER only, so an administrator never reaches financial data (BR-02).
+  app.use("/api/admin", requireAuth, requireRole("ADMIN"));
+  app.use(["/api/accounts", "/api/transactions", "/api/summary"], requireAuth, requireRole("USER"));
 
   app.use("/api", (_req, res) => {
     res.status(404).json({ error: { code: "NOT_FOUND", message: "Not found." } });
