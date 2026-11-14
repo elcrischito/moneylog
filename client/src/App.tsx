@@ -5,12 +5,14 @@ import { LoginPage } from "./pages/LoginPage";
 import { UsersPage } from "./pages/UsersPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { AccountsPage } from "./pages/AccountsPage";
+import { NewTransactionPage } from "./pages/NewTransactionPage";
 import { TopBar } from "./components/TopBar";
 
 // Route table per role. The server enforces the same rules (System SDS §5).
 const userRoutes: Record<string, () => ReactElement> = {
   "/": () => <DashboardPage />,
   "/accounts": () => <AccountsPage />,
+  "/transactions/new": () => <NewTransactionPage />,
 };
 const adminRoutes: Record<string, () => ReactElement> = {
   "/admin/users": () => <UsersPage />,
