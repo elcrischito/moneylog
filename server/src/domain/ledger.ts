@@ -1,6 +1,6 @@
 // MoneyLog domain rules (pure functions, no I/O). Every rule here is enforced on the
 // server; the UI only repeats some of them for quick feedback (System SDS §1).
-import { parseMoney } from "./money";
+import { parseMoney, formatMoney } from "./money";
 import { isValidDate } from "./dates";
 
 export type AccountType = "CASH" | "LOAN_GIVEN" | "LOAN_TAKEN" | "INCOME" | "EXPENSE";
@@ -117,4 +117,117 @@ export function validateOpeningBalance(
     return fail("DATE_IN_FUTURE", "The date cannot be in the future.", [{ field: "date", message: "Date is in the future." }]);
   }
   return { ok: true, value: { amount: amount.value, date: dateInput } };
+}
+
+// ---------------------------------------------------------------------------
+// F-05 / F-06: transaction validation (BR-06 … BR-14). Runs on the server for
+// every POST /api/transactions; nothing is stored unless it returns ok.
+// ---------------------------------------------------------------------------
+export const MAX_LINES = 20;
+export const MAX_DESCRIPTION = 200;
+
+// BR-08 / BR-09
+export const ALLOWED: Record<TransactionKind, { primary: ReadonlySet<AccountType>; lines: ReadonlySet<AccountType> }> = {
+  PAYMENT: { primary: new Set(["CASH", "LOAN_TAKEN"]), lines: new Set(["EXPENSE", "LOAN_TAKEN", "LOAN_GIVEN", "CASH"]) },
+  RECEIPT: { primary: new Set(["CASH"]), lines: new Set(["INCOME", "LOAN_GIVEN", "LOAN_TAKEN", "CASH"]) },
+};
+
+export interface ValidTransaction {
+  kind: TransactionKind;
+  date: string;
+  description: string;
+  primaryAccountId: string;
+  total: number;
+  lines: LedgerLine[];
+}
+
+/**
+ * @param accounts the caller's own accounts only — an id that is not in this map
+ *                 (unknown, or another user's) is reported as ACCOUNT_NOT_FOUND (BR-10).
+ */
+export function validateTransaction(input: unknown, accounts: Map<string, LedgerAccount>, today: string): Result<ValidTransaction> {
+  const body = (input ?? {}) as Record<string, unknown>;
+  const shape: { field: string; message: string }[] = [];
+  if (body.kind !== "PAYMENT" && body.kind !== "RECEIPT") shape.push({ field: "kind", message: "Kind must be PAYMENT or RECEIPT." });
+  if (typeof body.accountId !== "string" || !body.accountId) shape.push({ field: "accountId", message: "Choose an account." });
+  if (!isValidDate(body.date)) shape.push({ field: "date", message: "Date must be a valid date (YYYY-MM-DD)." });
+  if (!Array.isArray(body.lines)) shape.push({ field: "lines", message: "Lines must be a list." });
+  const description = body.description === undefined || body.description === null ? "" : body.description;
+  if (typeof description !== "string" || description.trim().length > MAX_DESCRIPTION) {
+    shape.push({ field: "description", message: `Description must be text of at most ${MAX_DESCRIPTION} characters.` });
+  }
+  const rawLines = Array.isArray(body.lines) ? (body.lines as Record<string, unknown>[]) : [];
+  rawLines.forEach((l, i) => {
+    if (!l || typeof l !== "object" || typeof l.accountId !== "string" || !l.accountId) {
+      shape.push({ field: `lines[${i}].accountId`, message: "Choose an account for this line." });
+    }
+  });
+  if (shape.length > 0) return fail("VALIDATION_ERROR", "Some fields are missing or invalid.", shape);
+
+  const kind = body.kind as TransactionKind;
+  if (rawLines.length < 1 || rawLines.length > MAX_LINES) {
+    return fail("INVALID_LINE_COUNT", `A transaction needs between 1 and ${MAX_LINES} allocation lines.`, [{ field: "lines", message: "Wrong number of lines." }]);
+  }
+
+  // BR-07 amounts
+  const total = parseMoney(body.total);
+  const amountErrors: { field: string; message: string }[] = [];
+  if (!total.ok) amountErrors.push({ field: "total", message: "Invalid total." });
+  const lines: LedgerLine[] = [];
+  rawLines.forEach((l, i) => {
+    const a = parseMoney(l.amount);
+    if (!a.ok) amountErrors.push({ field: `lines[${i}].amount`, message: "Invalid amount." });
+    else lines.push({ accountId: l.accountId as string, amount: a.value });
+  });
+  if (amountErrors.length > 0 || !total.ok) {
+    return fail("INVALID_AMOUNT", "Amounts must be greater than 0, with at most 2 decimals and at most 9,999,999.99.", amountErrors);
+  }
+
+  // BR-10 ownership and active accounts
+  const primary = accounts.get(body.accountId as string);
+  const missing: { field: string; message: string }[] = [];
+  if (!primary || !primary.isActive) missing.push({ field: "accountId", message: "Account not found." });
+  lines.forEach((l, i) => {
+    const a = accounts.get(l.accountId);
+    if (!a || !a.isActive) missing.push({ field: `lines[${i}].accountId`, message: "Account not found." });
+  });
+  if (missing.length > 0 || !primary) return fail("ACCOUNT_NOT_FOUND", "One or more accounts do not exist.", missing);
+
+  // BR-08 / BR-09 types
+  const rules = ALLOWED[kind];
+  const typeErrors: { field: string; message: string }[] = [];
+  if (!rules.primary.has(primary.type)) {
+    typeErrors.push({ field: "accountId", message: kind === "PAYMENT" ? "Pay from a cash, bank or credit card / loan account." : "Receive into a cash or bank account." });
+  }
+  lines.forEach((l, i) => {
+    if (!rules.lines.has(accounts.get(l.accountId)!.type)) {
+      typeErrors.push({ field: `lines[${i}].accountId`, message: kind === "PAYMENT" ? "Income accounts cannot be used in a payment." : "Expense accounts cannot be used when receiving money." });
+    }
+  });
+  if (typeErrors.length > 0) return fail("ACCOUNT_TYPE_NOT_ALLOWED", "This account type is not allowed here.", typeErrors);
+
+  const selfIndex = lines.findIndex((l) => l.accountId === primary.id);
+  if (selfIndex >= 0) {
+    return fail("LINE_USES_PRIMARY_ACCOUNT", "A line cannot use the same account the money is paid from or received into.", [
+      { field: `lines[${selfIndex}].accountId`, message: "Same as the main account." },
+    ]);
+  }
+
+  // BR-06 exact sum in satang
+  const sum = lines.reduce((s, l) => s + l.amount, 0);
+  if (sum !== total.value) {
+    return fail("LINES_TOTAL_MISMATCH", `Allocation lines (${formatMoney(sum)}) must equal the total (${formatMoney(total.value)}).`, [
+      { field: "lines", message: "Lines do not add up to the total." },
+    ]);
+  }
+
+  // BR-14
+  if ((body.date as string) > today) {
+    return fail("DATE_IN_FUTURE", "The date cannot be in the future.", [{ field: "date", message: "Date is in the future." }]);
+  }
+
+  return {
+    ok: true,
+    value: { kind, date: body.date as string, description: (description as string).trim(), primaryAccountId: primary.id, total: total.value, lines },
+  };
 }

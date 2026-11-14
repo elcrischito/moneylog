@@ -8,6 +8,7 @@ import { errorHandler } from "./http/errors";
 import { authRouter } from "./routes/auth";
 import { adminRouter } from "./routes/admin";
 import { accountsRouter } from "./routes/accounts";
+import { transactionsRouter } from "./routes/transactions";
 import { requireAuth, requireRole } from "./middleware/auth";
 import "./auth/types";
 
@@ -38,6 +39,7 @@ export function createApp() {
   app.use("/api/admin", requireAuth, requireRole("ADMIN"), adminRouter);
   app.use(["/api/accounts", "/api/transactions", "/api/summary"], requireAuth, requireRole("USER"));
   app.use("/api/accounts", accountsRouter);
+  app.use("/api/transactions", transactionsRouter);
 
   app.use("/api", (_req, res) => {
     res.status(404).json({ error: { code: "NOT_FOUND", message: "Not found." } });
