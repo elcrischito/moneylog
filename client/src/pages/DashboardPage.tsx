@@ -1,7 +1,8 @@
 import { useAuth } from "../lib/auth";
 import { useApi } from "../lib/useApi";
 import { thb, ACCOUNT_TYPE_LABEL } from "../lib/format";
-import type { AccountsResponse } from "../lib/types";
+import type { AccountsResponse, SummaryResponse } from "../lib/types";
+import { SummaryView } from "./SummaryPage";
 import { LoadState } from "../components/LoadState";
 import { Link } from "../lib/router";
 
@@ -9,6 +10,7 @@ import { Link } from "../lib/router";
 export function DashboardPage() {
   const { user } = useAuth();
   const { data, error, loading, reload } = useApi<AccountsResponse>("/api/accounts");
+  const month = useApi<SummaryResponse>("/api/summary");
 
   return (
     <>
@@ -50,6 +52,12 @@ export function DashboardPage() {
               </table>
             </div>
           </section>
+          {month.data && (
+            <section aria-label="This month">
+              <h3>This month ({month.data.from} to {month.data.to})</h3>
+              <SummaryView data={month.data} />
+            </section>
+          )}
         </>
       )}
     </>
