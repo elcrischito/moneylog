@@ -8,7 +8,13 @@ function signedInAs(role: "USER" | "ADMIN") {
   const user = { id: "u1", email: `${role.toLowerCase()}@moneylog.test`, fullName: role === "ADMIN" ? "Nok Administrator" : "Alice Wong", role };
   globalThis.fetch = vi.fn(async (url: RequestInfo | URL) => {
     const path = String(url);
-    const body = path.startsWith("/api/auth/me") ? { user } : path.startsWith("/api/admin/users") ? { users: [] } : {};
+    const body = path.startsWith("/api/auth/me")
+      ? { user }
+      : path.startsWith("/api/admin/users")
+        ? { users: [] }
+        : path.startsWith("/api/accounts")
+          ? { accounts: [], totals: { cash: "0.00", creditCardDebt: "0.00", loansTaken: "0.00", loansGiven: "0.00" } }
+          : {};
     return new Response(JSON.stringify(body), { status: 200, headers: { "Content-Type": "application/json" } });
   }) as typeof fetch;
 }

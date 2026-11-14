@@ -1,6 +1,6 @@
 # System-Level Software Design Specification — MoneyLog
 
-Version 1.0 (Sprint 1 baseline, 14 Nov 2026). Requirement IDs refer to [`srs.md`](srs.md), and feature IDs refer to [`features.md`](features.md).
+Version 1.1 (14 Nov 2026). v1.1: the seed also creates *Loan from Mom* (LOAN_TAKEN/OTHER_LOAN), which AC-06-3 (borrowing) needs. 11 starter accounts per user. Requirement IDs refer to [`srs.md`](srs.md), and feature IDs refer to [`features.md`](features.md).
 
 ## 1. Architecture and stack
 
@@ -53,7 +53,7 @@ erDiagram
 
 **Balances are derived, never stored** (decision D-01). An account's balance is its opening balance, plus or minus the sums of the allocation lines and primary amounts that touch it, according to the BR-11 table. This makes corrections in Sprint 2 safe: change the lines and every balance follows.
 
-**Setup, migrations, seed.** `npx prisma migrate deploy` applies versioned SQL migrations from `server/prisma/migrations/`. `npm run prisma:seed` is idempotent (upserts). It creates one administrator and three users (Alice, Bob, and Dan, who is disabled). Each enabled user gets these accounts: *Bangkok Bank Savings* (CASH/BANK), *Wallet* (CASH/WALLET), *KTC Credit Card* (LOAN_TAKEN/CREDIT_CARD), *Loan to Ploy* (LOAN_GIVEN), income accounts *Salary* and *Interest Earned*, and expense accounts *Dining*, *Groceries*, *Electricity* and *Telecom*. No transactions are seeded, so the Sprint 1 journey starts from zero. Seed passwords come from `SEED_ADMIN_PASSWORD` / `SEED_USER_PASSWORD`. A local fallback is used only when `NODE_ENV` is not `production`.
+**Setup, migrations, seed.** `npx prisma migrate deploy` applies versioned SQL migrations from `server/prisma/migrations/`. `npm run prisma:seed` is idempotent (upserts). It creates one administrator and three users (Alice, Bob, and Dan, who is disabled). Each enabled user gets these accounts: *Bangkok Bank Savings* (CASH/BANK), *Wallet* (CASH/WALLET), *KTC Credit Card* (LOAN_TAKEN/CREDIT_CARD), *Loan from Mom* (LOAN_TAKEN/OTHER_LOAN), *Loan to Ploy* (LOAN_GIVEN), income accounts *Salary* and *Interest Earned*, and expense accounts *Dining*, *Groceries*, *Electricity* and *Telecom*. No transactions are seeded, so the Sprint 1 journey starts from zero. Seed passwords come from `SEED_ADMIN_PASSWORD` / `SEED_USER_PASSWORD`. A local fallback is used only when `NODE_ENV` is not `production`.
 
 ## 3. UI structure and conventions
 

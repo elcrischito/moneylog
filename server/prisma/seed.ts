@@ -1,8 +1,9 @@
 // Idempotent seed (System SDS §2). Safe to rerun: it only creates what is missing.
 // Passwords come from SEED_ADMIN_PASSWORD / SEED_USER_PASSWORD. Outside production a
 // documented local fallback is used so that tests and local runs work out of the box.
-import { PrismaClient, Role, AccountType, AccountSubtype } from "@prisma/client";
+import { PrismaClient, Role } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { STARTER_ACCOUNTS } from "./starter-accounts";
 
 const prisma = new PrismaClient();
 const isProduction = process.env.NODE_ENV === "production";
@@ -22,20 +23,6 @@ export const SEED_USERS = [
   { email: "dan@moneylog.test", fullName: "Dan Disabled", role: Role.USER, isActive: false },
 ];
 
-// The theme's Sprint 1 example: a bank account, a credit card, income and expense accounts.
-export const STARTER_ACCOUNTS: { name: string; type: AccountType; subtype?: AccountSubtype }[] = [
-  { name: "Bangkok Bank Savings", type: AccountType.CASH, subtype: AccountSubtype.BANK },
-  { name: "Wallet", type: AccountType.CASH, subtype: AccountSubtype.WALLET },
-  { name: "KTC Credit Card", type: AccountType.LOAN_TAKEN, subtype: AccountSubtype.CREDIT_CARD },
-  { name: "Loan from Mom", type: AccountType.LOAN_TAKEN, subtype: AccountSubtype.OTHER_LOAN },
-  { name: "Loan to Ploy", type: AccountType.LOAN_GIVEN },
-  { name: "Salary", type: AccountType.INCOME },
-  { name: "Interest Earned", type: AccountType.INCOME },
-  { name: "Dining", type: AccountType.EXPENSE },
-  { name: "Groceries", type: AccountType.EXPENSE },
-  { name: "Electricity", type: AccountType.EXPENSE },
-  { name: "Telecom", type: AccountType.EXPENSE },
-];
 
 async function main() {
   const adminHash = await bcrypt.hash(passwordFromEnv("SEED_ADMIN_PASSWORD"), 10);

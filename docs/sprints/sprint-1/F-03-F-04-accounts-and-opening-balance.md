@@ -4,7 +4,7 @@
 |---|---|
 | Requirements | F-03: FR-07, FR-14 (totals), BR-01, BR-05, BR-11, BR-15 · F-04: FR-09, BR-12, BR-13 |
 | Depends on | F-01 |
-| Version | 1.0 (14 Nov 2026), written before implementation |
+| Version | 1.1 (14 Nov 2026); 1.0 written before implementation |
 
 ## Behaviour and workflow
 **F-03.** The user opens **Dashboard** or **Accounts**. The client calls `GET /api/accounts`. The server loads only the caller's accounts and their transactions and computes each balance with the domain function `computeBalances` (BR-11):
@@ -38,7 +38,7 @@ Accounts are ordered by type (CASH, LOAN_TAKEN, LOAN_GIVEN, INCOME, EXPENSE), th
 `PUT /api/accounts/:id/opening-balance` with body `{ "amount": "10000.00", "date": "2026-11-01" }` → `200 { "account": { …, "balance": "…" } }`. Errors: `400 VALIDATION_ERROR | INVALID_AMOUNT | DATE_IN_FUTURE | OPENING_BALANCE_NOT_ALLOWED`, `401`, `403`, `404`.
 
 ## Data
-Table `FinancialAccount` (migration `init`): `openingBalance INT NOT NULL DEFAULT 0` (satang), `openingDate DATE NULL`, unique `(ownerId, name)`. The seed creates 10 accounts per enabled user (System SDS, Section 2).
+Table `FinancialAccount` (migration `init`): `openingBalance INT NOT NULL DEFAULT 0` (satang), `openingDate DATE NULL`, unique `(ownerId, name)`. The seed creates 11 accounts per enabled user (System SDS, Section 2, v1.1).
 
 ## UI
 - **Dashboard**: four total cards (Cash, Credit card debt, Loans taken, Loans given), then account balances.
@@ -59,7 +59,7 @@ Table `FinancialAccount` (migration `init`): `openingBalance INT NOT NULL DEFAUL
 |---|---|---|---|---|
 | TEST-UNIT-04 | unit | AC-04-2, AC-04-3 | `validateOpeningBalance` with types/amounts; summary with opening only | allowed only for CASH/LOAN_*; negative rejected; income 0 |
 | TEST-UNIT-05 | unit | AC-03-1, AC-03-2 | Sprint 1 example in memory + an overdraft case | bank 38,500.00; card 0.00; dining 900.00; groceries 600.00; salary 30,000.00; overdraft −50.00 |
-| TEST-API-20 | API+DB | AC-03-1, AC-03-2 | fresh user, GET accounts | 10 accounts, all types present, balances 0.00, totals 0.00 |
+| TEST-API-20 | API+DB | AC-03-1, AC-03-2 | fresh user, GET accounts | 11 accounts (all starter accounts), all types present, balances 0.00, totals 0.00 |
 | TEST-API-21 | API+DB | AC-04-1 | PUT 10,000 then 12,000 on bank | balance 12,000.00 |
 | TEST-API-22 | API+DB | AC-04-2 | PUT on Salary; amount −1; date tomorrow; amount 0 | 400 ×3 with codes; 200 for 0 |
 | TEST-API-23 | API+DB | AC-03-3 | bob lists accounts; bob PUT on alice's account | no alice ids; 404 |
@@ -69,3 +69,4 @@ Table `FinancialAccount` (migration `init`): `openingBalance INT NOT NULL DEFAUL
 | Version | Date | Change |
 |---|---|---|
 | 1.0 | 14 Nov 2026 | First contract (before implementation) |
+| 1.1 | 14 Nov 2026 | Starter accounts are 11, not 10: *Loan from Mom* (LOAN_TAKEN/OTHER_LOAN) was missing from the seed list although AC-06-3 needs a non-card loan. The AC is unchanged; the TEST-API-20 expected count was updated. Found while implementing the seed. |
