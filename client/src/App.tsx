@@ -1,26 +1,39 @@
+import { useEffect, type ReactElement } from "react";
 import { AuthProvider, useAuth } from "./lib/auth";
 import { navigate, usePath } from "./lib/router";
 import { LoginPage } from "./pages/LoginPage";
+import { UsersPage } from "./pages/UsersPage";
 import { TopBar } from "./components/TopBar";
-import { useEffect } from "react";
+
+// Route table per role. The server enforces the same rules (System SDS §5).
+const userRoutes: Record<string, () => ReactElement> = {
+  "/": () => <p className="muted">Dashboard</p>,
+};
+const adminRoutes: Record<string, () => ReactElement> = {
+  "/admin/users": () => <UsersPage />,
+};
 
 function Routes() {
   const { user, loading } = useAuth();
   const path = usePath();
+  const routes = user?.role === "ADMIN" ? adminRoutes : userRoutes;
+  const home = user?.role === "ADMIN" ? "/admin/users" : "/";
 
   useEffect(() => {
-    if (!loading && !user && path !== "/login") navigate("/login");
-  }, [loading, user, path]);
+    if (loading) return;
+    if (!user && path !== "/login") navigate("/login");
+    else if (user && !routes[path]) navigate(home);
+  }, [loading, user, path, routes, home]);
 
   if (loading) return <main className="container">Loading…</main>;
   if (!user) return <LoginPage />;
+  const Page = routes[path] ?? routes[home];
 
   return (
     <>
       <TopBar />
       <main className="container">
-        <h2>Welcome, {user.fullName}</h2>
-        <p className="muted">MoneyLog Sprint 1.</p>
+        <Page />
       </main>
     </>
   );
