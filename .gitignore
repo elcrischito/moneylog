@@ -1,0 +1,19 @@
+# dependencies
+node_modules/
+# env & secrets (never commit real values)
+.env
+*.env
+!.env.example
+# build output
+dist/
+build/
+# test output
+client/test-results/
+client/playwright-report/
+coverage/
+# logs & OS
+*.log
+.DS_Store
+__pycache__/
+# local tooling
+server/.ptmp/
