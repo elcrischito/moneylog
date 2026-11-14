@@ -7,6 +7,7 @@ import { config } from "./config";
 import { errorHandler } from "./http/errors";
 import { authRouter } from "./routes/auth";
 import { adminRouter } from "./routes/admin";
+import { accountsRouter } from "./routes/accounts";
 import { requireAuth, requireRole } from "./middleware/auth";
 import "./auth/types";
 
@@ -36,6 +37,7 @@ export function createApp() {
   // financial route is USER only, so an administrator never reaches financial data (BR-02).
   app.use("/api/admin", requireAuth, requireRole("ADMIN"), adminRouter);
   app.use(["/api/accounts", "/api/transactions", "/api/summary"], requireAuth, requireRole("USER"));
+  app.use("/api/accounts", accountsRouter);
 
   app.use("/api", (_req, res) => {
     res.status(404).json({ error: { code: "NOT_FOUND", message: "Not found." } });

@@ -3,11 +3,14 @@ import { AuthProvider, useAuth } from "./lib/auth";
 import { navigate, usePath } from "./lib/router";
 import { LoginPage } from "./pages/LoginPage";
 import { UsersPage } from "./pages/UsersPage";
+import { DashboardPage } from "./pages/DashboardPage";
+import { AccountsPage } from "./pages/AccountsPage";
 import { TopBar } from "./components/TopBar";
 
 // Route table per role. The server enforces the same rules (System SDS §5).
 const userRoutes: Record<string, () => ReactElement> = {
-  "/": () => <p className="muted">Dashboard</p>,
+  "/": () => <DashboardPage />,
+  "/accounts": () => <AccountsPage />,
 };
 const adminRoutes: Record<string, () => ReactElement> = {
   "/admin/users": () => <UsersPage />,
