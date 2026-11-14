@@ -1,0 +1,110 @@
+// MoneyLog data model — see docs/system-sds.md Section 2.
+// Money is stored as integer satang (1 THB = 100 satang) — NFR-04.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum AccountType {
+  CASH
+  LOAN_GIVEN
+  LOAN_TAKEN
+  INCOME
+  EXPENSE
+}
+
+enum AccountSubtype {
+  WALLET
+  BANK
+  CREDIT_CARD
+  OTHER_LOAN
+}
+
+enum TransactionKind {
+  PAYMENT
+  RECEIPT
+}
+
+model User {
+  id           String             @id @default(uuid())
+  email        String             @unique
+  fullName     String
+  passwordHash String
+  role         Role               @default(USER)
+  isActive     Boolean            @default(true)
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  sessions     Session[]
+  accounts     FinancialAccount[]
+  transactions Transaction[]
+}
+
+model Session {
+  id        String    @id @default(uuid())
+  tokenHash String    @unique
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+model FinancialAccount {
+  id             String           @id @default(uuid())
+  ownerId        String
+  owner          User             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  name           String
+  type           AccountType
+  subtype        AccountSubtype?
+  openingBalance Int              @default(0)
+  openingDate    DateTime?        @db.Date
+  isActive       Boolean          @default(true)
+  createdAt      DateTime         @default(now())
+  primaryFor     Transaction[]
+  lines          AllocationLine[]
+
+  @@unique([ownerId, name])
+  @@index([ownerId])
+}
+
+model Transaction {
+  id               String           @id @default(uuid())
+  ownerId          String
+  owner            User             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  kind             TransactionKind
+  date             DateTime         @db.Date
+  description      String           @default("")
+  totalAmount      Int
+  primaryAccountId String
+  primaryAccount   FinancialAccount @relation(fields: [primaryAccountId], references: [id])
+  isFavorite       Boolean          @default(false)
+  createdAt        DateTime         @default(now())
+  lines            AllocationLine[]
+
+  @@index([ownerId, date(sort: Desc)])
+}
+
+model AllocationLine {
+  id            String           @id @default(uuid())
+  transactionId String
+  transaction   Transaction      @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  accountId     String
+  account       FinancialAccount @relation(fields: [accountId], references: [id])
+  amount        Int
+  position      Int
+
+  @@index([transactionId])
+  @@index([accountId])
+}
