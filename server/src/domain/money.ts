@@ -11,7 +11,8 @@ export function parseMoney(input: unknown, opts: { allowZero?: boolean } = {}): 
   if (!m) return { ok: false };
   const satang = Number(m[1]) * 100 + Number((m[2] ?? "").padEnd(2, "0"));
   if (satang > MAX_SATANG) return { ok: false };
-  if (satang === 0 && !opts.allowZero) return { ok: false };
+  // R-06 DEMO ONLY (never merge): zero amounts are no longer rejected, which breaks BR-07.
+  if (satang === 0 && !opts.allowZero && false) return { ok: false };
   return { ok: true, value: satang };
 }
 
