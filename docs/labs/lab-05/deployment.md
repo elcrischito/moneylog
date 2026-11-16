@@ -124,4 +124,24 @@ The image is `…/moneylog/moneylog@sha256:…`; the deploy run log and Artifact
 2. Restart: deploy a new revision without code change (`gcloud run services update moneylog --region asia-southeast1 --update-labels=restart=$(date +%s)`); the record is still in History.
 3. Redeploy: merge a release into `main`; after `deploy.yml` finishes, the record and the balances are unchanged.
 
-Evidence (screenshots before/after) is in the Lab 5 PDF.
+Result on 16 Nov 2026 (screenshots in the Lab 5 PDF):
+
+| Step | Revision | Result |
+|---|---|---|
+| Record "Lab5 persistence check", Payment from Wallet to Dining, 123.45 THB, as Alice | `moneylog-00001-5tm` (first deploy from `92c3155`) | saved, shown in History |
+| Restart (label update) | `moneylog-00002-jgc` | still in History |
+| Redeploy by the pipeline (release PR #33, merge commit `e55079c`, run [Deploy demo #1](https://github.com/elcrischito/moneylog/actions/runs/43825703145)) | new revision from image `…/moneylog/moneylog@sha256:0ee9b54…` | still in History |
+
+## 7. Changing a secret
+
+If a secret value is ever shown (screen, log, screenshot) or pushed, replace it at once. On 16 Nov 2026 the first demo password appeared in a Cloud Shell screenshot (never in Git); it was replaced the same day:
+
+```bash
+# 1. new version in Secret Manager, never printed
+NEWPW="$(openssl rand -base64 16 | tr -d '/+=' | cut -c1-14)Aa1!"; printf '%s' "$NEWPW" | gcloud secrets versions add moneylog-demo-password --data-file=-; unset NEWPW
+# 2. apply it: one execution of the migrate job with overridden args that re-hashes the
+#    demo users' passwords from DEMO_USER_PASSWORD (:latest) and revokes their open sessions
+gcloud run jobs execute moneylog-migrate --region asia-southeast1 --wait --args='^~^-c~node -e "$(echo <base64 of the script> | base64 -d)"'
+```
+
+Result: `demo passwords rotated: 3 users, 1 sessions revoked` (Cloud Logging). The seed itself never overwrites a password, so a later release does not bring the old one back. For the administrator, use the same steps with `moneylog-admin-password`, `ADMIN_PASSWORD` and `role:"ADMIN"`.
