@@ -1,0 +1,62 @@
+# Local run of MoneyLog with Docker Compose (Lab 5, Student Guide Episode 3).
+#   docker compose up --build -d
+#   web app  http://localhost:5173   (nginx, proxies /api to the server)
+#   API      http://localhost:3000   (/api/health, /api/ready)
+# The passwords below are local fallbacks only. Override them in a local .env next to
+# this file. In the cloud every secret comes from Secret Manager (deploy/deploy.sh).
+# Local logins: admin@moneylog.test / ADMIN_PASSWORD, alice@moneylog.test / DEMO_USER_PASSWORD.
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-moneylog}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-moneylog}
+      POSTGRES_DB: ${POSTGRES_DB:-moneylog}
+    volumes:
+      - moneylog-pgdata:/var/lib/postgresql/data   # data survives `docker compose down`
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-moneylog}"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  # One-shot job: migrations + idempotent seed, like the Cloud Run job in the cloud.
+  migrate:
+    build:
+      context: ./server
+    command: ["sh", "-c", "npx prisma migrate deploy && npm run prisma:seed"]
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-moneylog}:${POSTGRES_PASSWORD:-moneylog}@db:5432/${POSTGRES_DB:-moneylog}?schema=public
+      NODE_ENV: production
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-AdminInitial123!}
+      SEED_DEMO_DATA: "true"
+      DEMO_USER_PASSWORD: ${DEMO_USER_PASSWORD:-DemoInitial123!}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  server:
+    build:
+      context: ./server
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-moneylog}:${POSTGRES_PASSWORD:-moneylog}@db:5432/${POSTGRES_DB:-moneylog}?schema=public
+      NODE_ENV: production
+      PORT: 3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  client:
+    build:
+      context: ./client
+    ports:
+      - "5173:80"
+    depends_on:
+      - server
+
+volumes:
+  moneylog-pgdata:
