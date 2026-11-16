@@ -73,15 +73,18 @@ Runs on every PR into `staging` or `main`, on pushes to `staging`, and from `dep
 
 | Item | Value |
 |---|---|
-| Project ID | `<GCP_PROJECT_ID>` (filled in after the course project is created) |
+| Project ID | `cpe334-en049-moneylog` (project number 21960438578, GCP Free Trial on a personal Gmail; no organization) |
+| Public URL | https://moneylog-bqq6zokxdq-as.a.run.app |
 | Region | `asia-southeast1` (Singapore, closest to Bangkok) |
 | Artifact Registry repo / image | `moneylog` / `moneylog:<commit SHA>` |
 | Cloud Run service | `moneylog` (min instances 0, max 3, 512 MiB) |
 | Cloud Run job (migrate + seed) | `moneylog-migrate` |
 | Cloud SQL instance / database / user | `moneylog-pg` (PostgreSQL 16, `db-f1-micro`, 10 GB, storage auto-increase off) / `moneylog` / `moneylog` |
-| Runtime service account | `moneylog-runner@<GCP_PROJECT_ID>.iam.gserviceaccount.com` (Cloud SQL client + access to its 3 secrets only) |
+| Runtime service account | `moneylog-runner@cpe334-en049-moneylog.iam.gserviceaccount.com` (Cloud SQL client + access to its 3 secrets only) |
 | Secrets | `moneylog-database-url`, `moneylog-admin-password`, `moneylog-demo-password` |
-| Budget | alerts-only budget, created before any other resource |
+| Deployer service account (GitHub Actions) | `moneylog-deployer@cpe334-en049-moneylog.iam.gserviceaccount.com`: `run.developer`, `artifactregistry.writer` on `moneylog` only, `serviceAccountUser` on `moneylog-runner` only; no key |
+| Workload Identity | pool `github-actions`, provider `github-main` (accepts only repository ID 1457556961, owner ID 256379567, `refs/heads/main`, environment `demo`, workflow `deploy.yml`) |
+| Budget | `cpe334-lab5-budget`, alerts only, 20 EUR/month, alerts at 50/90/100 % of actual cost, credits not subtracted; created before any other resource |
 
 First deployment, once, from Cloud Shell:
 
@@ -90,7 +93,10 @@ git clone https://github.com/elcrischito/moneylog && cd moneylog
 DRY_RUN=1 bash deploy/deploy.sh --demo     # prints every command, calls nothing
 bash deploy/deploy.sh --demo               # creates the resources above, migrates, seeds, deploys
 python3 deploy/smoke_test.py "$SERVICE_URL"
+bash deploy/setup-wif.sh                   # once: GitHub -> GCP trust, prints the 4 values for environment demo
 ```
+
+First deployment done on 16 Nov 2026 from `main` at `92c3155` (revision `moneylog-00001-5tm`); the smoke test passed on the public URL.
 
 Pause when idle: `gcloud sql instances patch moneylog-pg --activation-policy=NEVER` (start again with `ALWAYS`). Tear down after the course: `bash deploy/teardown.sh`.
 
