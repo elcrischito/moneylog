@@ -10,7 +10,7 @@
 | Product | **MoneyLog**, Theme 7: Personal Money and Expense Logging System (double-entry: every payment or receipt is split into lines that must add up to the total) |
 | URL | **https://moneylog-bqq6zokxdq-as.a.run.app** |
 | Accepted Sprint 1 baseline | tag **v0.1.0** = commit `c26bebe` (14 Nov 2026), contracts in `docs/sprints/sprint-1/` |
-| Deployed release under test | `main` = **`81d4c6d`** (21 Nov 2026). It has the same Sprint 1 behaviour as v0.1.0. The only later changes are Lab 5 deployment work and `version` in `/api/health`; no Sprint 2 feature is deployed. |
+| Deployed release under test | `main` = **`81d4c6d`**, Cloud Run revision **`moneylog-00005-jz6`** (21 Nov 2026). It has the same Sprint 1 behaviour as v0.1.0. The only later changes are Lab 5 deployment work and `version` in `/api/health`; no Sprint 2 feature is deployed. |
 | How to record the tested version | Open **https://moneylog-bqq6zokxdq-as.a.run.app/api/health**. `version` is the full commit SHA that is running. Copy it into every result row. |
 | Accepted-for-test scope | Sprint 1 features **F-01 … F-08**: sign in/out (F-01), administrator user access (F-02), accounts and balances (F-03), opening balances (F-04), payments (F-05), receipts (F-06), income/expense summary (F-07), history (F-08). **Out of scope:** editing or deleting transactions, budgets, recurring items, reports and CSV export (Sprint 2/3). Report them as enhancements, not defects. |
 | Cases | **UAT-01 … UAT-06** in [`uat-cases.md`](uat-cases.md). UAT-06 must run **last**. |
