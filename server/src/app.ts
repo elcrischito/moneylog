@@ -20,7 +20,8 @@ export function createApp() {
   app.use(express.json({ limit: "100kb" }));
 
   app.get("/api/health", (_req, res) => {
-    res.json({ status: "ok", service: "MoneyLog API" });
+    // version = commit SHA baked into the image (Dockerfile ARG APP_VERSION, #37); "dev" locally.
+    res.json({ status: "ok", service: "MoneyLog API", version: process.env.APP_VERSION || "dev" });
   });
 
   // 503 when the database cannot be reached (used by the Lab 5 smoke test).
