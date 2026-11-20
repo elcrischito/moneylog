@@ -89,6 +89,9 @@ ENV NODE_ENV=production
 ENV TZ=Asia/Bangkok
 
 ENV PORT=3000
+# Commit SHA of this image, shown by GET /api/health (#37). deploy.yml passes the image tag.
+ARG APP_VERSION=dev
+ENV APP_VERSION=$APP_VERSION
 EXPOSE 3000
 
 # Do not run as root inside the container.
