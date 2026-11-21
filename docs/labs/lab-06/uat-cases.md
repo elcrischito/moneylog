@@ -1,6 +1,6 @@
 # MoneyLog — Sprint 1 UAT cases (Lab 6, Product Team EN-049 "elcrischito")
 
-Version 1.0 · 21 Nov 2026 · Issue #36. Scope: the delivered Sprint 1 features **F-01 … F-08** and their acceptance criteria **AC-01-1 … AC-08-2** (contracts in `docs/sprints/sprint-1/`, accepted baseline **v0.1.0 = `c26bebe`**). Nothing from Sprint 2 or 3 is part of this acceptance. The handoff (URL, version, accounts, setup and cleanup) is in [`handoff.md`](handoff.md).
+Version 1.1 · 22 Nov 2026 · Issue #36 (1.1: fixes from UAT findings #44 and #45). Scope: the delivered Sprint 1 features **F-01 … F-08** and their acceptance criteria **AC-01-1 … AC-08-2** (contracts in `docs/sprints/sprint-1/`, accepted baseline **v0.1.0 = `c26bebe`**). Nothing from Sprint 2 or 3 is part of this acceptance. The handoff (URL, version, accounts, setup and cleanup) is in [`handoff.md`](handoff.md).
 
 **How to read the expected results.** The live database is shared, and other people may already have recorded data, so the money cases never assume a starting balance. Each one starts with a **"Write down before"** step, and its expected results are given as **before value ± change**. That way every case can be run again and gives the same verdict. Amounts are Thai baht. The app shows them as `฿1,234.56`, and you type them without the symbol or commas (`1234.56`).
 
@@ -71,7 +71,7 @@ Version 1.0 · 21 Nov 2026 · Issue #36. Scope: the delivered Sprint 1 features 
 
 | # | Action | Expected result |
 |---|---|---|
-| 1 | Sign in as **User A**. Open **History** and write down the description and total of the top row. Open the browser console (F12 → Console) and run: `fetch('/api/transactions',{headers:{Authorization:'Bearer '+sessionStorage.getItem('moneylog.token')}}).then(r=>r.json()).then(t=>console.log(t[0].id))` | The console prints an id (a long text). **Write it down as `ALICE_TX`.** |
+| 1 | Sign in as **User A**. Open **History** and write down the description and total of the top row. Open the browser console (F12 → Console) and run: `fetch('/api/transactions',{headers:{Authorization:'Bearer '+sessionStorage.getItem('moneylog.token')}}).then(r=>r.json()).then(t=>console.log(t.transactions[0].id))` | The console prints an id (a long text). **Write it down as `ALICE_TX`.** |
 | 2 | Open **Accounts** and write down *Wallet* and *Bangkok Bank Savings* for User A. **Sign out.** | Back on the sign-in page. |
 | 3 | Sign in as **User B**. Open **History**. | None of User A's rows appear: no `UAT-01 …`, no `UAT-03 alice`, no "Lab5 persistence check". |
 | 4 | Open **Accounts** and **Summary**. | Only User B's own accounts and amounts. User B's numbers do not include any of User A's amounts. |
@@ -91,21 +91,21 @@ Version 1.0 · 21 Nov 2026 · Issue #36. Scope: the delivered Sprint 1 features 
 - **Purpose:** check that an opening balance is **replaced, not added**, that it survives a new session, that it is never counted as income, and that history is kept in order.
 - **Requirement / AC:** FR-04, BR-09, BR-10 · AC-04-1, AC-04-2, AC-04-3, AC-08-1.
 - **Role:** User B, `bob@moneylog.test`. User B's *Loan to Ploy* account is used because no case creates transactions on it, so its balance equals its opening balance.
-- **Preconditions:** signed in as User B. Open **Summary** → **Show** (this month) and write down **Income** (I0).
+- **Preconditions:** signed in as User B. Open **Summary** → **Show** (this month) and write down **Income** (I0). Open **Accounts** and write down for *Loan to Ploy* its **balance** (L0) and its **opening amount** (O0, shown as "Opening ฿…"; 0.00 if there is none). On a first run L0 = O0 = 0.00. Let **M = L0 − O0**: the money already moved on this account, which an opening balance never changes.
 
 | # | Action | Expected result |
 |---|---|---|
-| 1 | **Accounts** → on *Loan to Ploy*, click **Opening balance**. Opening amount `10000`, opening date: the 1st of this month. Save. | The balance of *Loan to Ploy* is **฿10,000.00**. Under the name: "Opening ฿10,000.00 on <date>". |
-| 2 | Click **Opening balance** on *Loan to Ploy* again and enter `12000` with the same date. Save. | The balance is **฿12,000.00**, **not** ฿22,000.00: the new value replaces the old one. |
-| 3 | Try the opening balance `-5` on *Loan to Ploy*. | It is refused with an error message, and the balance stays ฿12,000.00. |
+| 1 | **Accounts** → on *Loan to Ploy*, click **Opening balance**. Opening amount `10000`, opening date: the 1st of this month. Save. | The balance of *Loan to Ploy* is **M + 10,000.00** (฿10,000.00 on a first run). Under the name: "Opening ฿10,000.00 on <date>". |
+| 2 | Click **Opening balance** on *Loan to Ploy* again and enter `12000` with the same date. Save. | The balance is **M + 12,000.00** (฿12,000.00 on a first run), **not** M + 22,000.00: the new value replaces the old one. |
+| 3 | Try the opening balance `-5` on *Loan to Ploy*. | It is refused with an error message, and the balance stays M + 12,000.00. |
 | 4 | Look at an **Income** or **Expense** account (e.g. *Salary*, *Dining*). | There is **no** Opening balance button: opening balances are only for cash and loan accounts. |
 | 5 | Open **Summary** → **Show** (this month). | Income is still **I0**. The ฿12,000.00 opening balance is **not** income. |
-| 6 | **Make a payment** from *Wallet*, total `45.50`, description `UAT-04 coffee`, Line 1 *Dining* `45.50`. Save. Then **Receive money** into *Wallet*, total `45.50`, description `UAT-04 refund from friend`, Line 1 *Loan to Ploy* `45.50`. Save. | Both are saved. History shows **`UAT-04 refund from friend` above `UAT-04 coffee`** (newest first). *Loan to Ploy* = **฿11,954.50** (12,000.00 − 45.50, Ploy paid back part of the loan). |
-| 7 | **Sign out**, close the browser tab, open the site again and sign in as User B. | Accounts still show *Loan to Ploy* = ฿11,954.50 and "Opening ฿12,000.00". History still has both UAT-04 rows in the same order. |
+| 6 | **Make a payment** from *Wallet*, total `45.50`, description `UAT-04 coffee`, Line 1 *Dining* `45.50`. Save. Then **Receive money** into *Wallet*, total `45.50`, description `UAT-04 refund from friend`, Line 1 *Loan to Ploy* `45.50`. Save. | Both are saved. History shows **`UAT-04 refund from friend` above `UAT-04 coffee`** (newest first). *Loan to Ploy* = **M + 11,954.50** (฿11,954.50 on a first run: 12,000.00 − 45.50, Ploy paid back part of the loan). |
+| 7 | **Sign out**, close the browser tab, open the site again and sign in as User B. | Accounts still show *Loan to Ploy* = M + 11,954.50 and "Opening ฿12,000.00". History still has both UAT-04 rows in the same order. |
 
-**Pass if** step 2 shows 12,000.00 (not 22,000.00), step 5 keeps Income unchanged, and step 7 shows the same state after a new session.
+**Pass if** step 2 shows M + 12,000.00 (not M + 22,000.00), step 5 keeps Income unchanged, and step 7 shows the same state after a new session.
 
-*Re-running UAT-04:* step 1 then sets the opening balance back to 10,000.00 and step 2 to 12,000.00, so the case gives the same result. The expected value of *Loan to Ploy* after step 6 becomes 12,000.00 − 45.50 × (number of previous runs + 1). Write down its value before step 6 if you run the case twice.
+*Re-running UAT-04:* every expected value uses M from the preconditions, so the case gives the same verdict on every run. Example from the UAT team's second run: M = −45.50, so steps 1, 2 and 6 show ฿9,954.50, ฿11,954.50 and ฿11,909.00. (Fixed after UAT finding #45.)
 
 ---
 
