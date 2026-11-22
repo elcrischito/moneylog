@@ -120,7 +120,7 @@ export function TransactionForm({ accounts, onSubmit }: { accounts: Account[]; o
         </div>
         <div className="field">
           <label htmlFor="tx-date">Date</label>
-          <input id="tx-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+          <input id="tx-date" type="date" value={date} max={todayIso()} onChange={(e) => setDate(e.target.value)} />
           {fieldErrors.date && <div className="field-error">{fieldErrors.date}</div>}
         </div>
         <div className="field">

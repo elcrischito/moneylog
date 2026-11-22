@@ -221,8 +221,10 @@ export function validateTransaction(input: unknown, accounts: Map<string, Ledger
     ]);
   }
 
-  // BR-14
-  void today;
+  // BR-14 (regression #47: the date may be today or earlier, Asia/Bangkok)
+  if ((body.date as string) > today) {
+    return fail("DATE_IN_FUTURE", "The date cannot be in the future.", [{ field: "date", message: "Date is in the future." }]);
+  }
 
   return {
     ok: true,
