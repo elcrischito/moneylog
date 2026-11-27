@@ -71,7 +71,7 @@ Shared behaviour:
 - **Navigation by role.** A user sees Dashboard, Accounts, New, History and Summary. An administrator sees only Users. Hiding links is cosmetic; the API enforces access.
 - **Validation.** Labelled fields. Errors appear under the field (`role="alert"`). The form keeps its values after a server error.
 - **Loading** shows a "Loading…" text and disables submit buttons (no double submit). **Empty** states explain what to do ("No transactions yet — record your first one"). **Errors** show the server message and a Retry button for failed loads.
-- Money is displayed as `฿1,234.50`. Negative cash is shown in red (BR-15).
+- Money is displayed as `฿1,234.50`. Negative cash is shown in red (BR-15). **CR-01:** the server refuses a transaction that would make a wallet negative (`INSUFFICIENT_WALLET_FUNDS`); the check runs in `services/walletGuard.ts` inside the insert's database transaction after locking the affected wallet rows, using the pure rule `walletShortfalls` in `domain/ledger.ts`.
 - Layout works from 360 px wide (NFR-09).
 
 ## 4. API approach

@@ -39,7 +39,7 @@ Version 1.0 (Sprint 1 baseline, 14 Nov 2026). Sprint 1 rows link to acceptance c
 | BR-12 Only income/expense lines counted | F-07, F-04 | 1 | AC-07-2 → TEST-UNIT-06, TEST-API-50 |
 | BR-13 Opening balance rules | F-04 | 1 | AC-04-2, AC-04-3 → TEST-API-22, TEST-UNIT-04 |
 | BR-14 Date not in the future | F-05, F-06 | 1 | AC-05-6 → TEST-API-35 |
-| BR-15 Overdraft allowed | F-03 | 1 | AC-03-1 → TEST-UNIT-05 |
+| BR-15 v2 Wallet ≥ 0, bank overdraft allowed (CR-01) | F-03, F-05, F-06 | 1 / Lab 7 | AC-03-1 → TEST-UNIT-05; AC-05-7 → TEST-API-37, TEST-UNIT-08; AC-05-8 → TEST-API-38; AC-06-4, AC-05-9 → TEST-API-39 |
 | BR-16 Atomic correction | F-11 | 2 | F-11 contract |
 | BR-17 Duplicate/favorites | F-14, F-15 | 3 | F-14, F-15 contracts |
 | NFR-01 Password hashing | F-01 | 1 | AC-01-6 → TEST-API-06 |

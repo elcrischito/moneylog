@@ -4,7 +4,7 @@
 |---|---|
 | Requirements | F-05: FR-10, BR-06, BR-07, BR-08, BR-10, BR-11, BR-14, NFR-04, NFR-05 · F-06: FR-11, BR-06, BR-07, BR-09, BR-10, BR-11, BR-14 |
 | Depends on | F-01, F-03 |
-| Version | 1.0 (14 Nov 2026), written before implementation |
+| Version | 1.1 (27 Nov 2026) — CR-01 / Lab 7 (Issue #41), written before implementation of the change; 1.0 (14 Nov 2026) before Sprint 1 implementation |
 
 These two features share one endpoint, one domain validator and one form, because the only differences are the `kind` and the allowed account types.
 
@@ -35,8 +35,9 @@ Sprint 1 journey (theme example), all by alice:
 | `ACCOUNT_TYPE_NOT_ALLOWED` | PAYMENT: primary ∈ {CASH, LOAN_TAKEN}, lines ∈ {EXPENSE, LOAN_TAKEN, LOAN_GIVEN, CASH} (BR-08). RECEIPT: primary = CASH, lines ∈ {INCOME, LOAN_GIVEN, LOAN_TAKEN, CASH} (BR-09). | 400 |
 | `LINE_USES_PRIMARY_ACCOUNT` | no line may use the primary account (BR-10) | 400 |
 | `DATE_IN_FUTURE` | date ≤ today in Asia/Bangkok; today is accepted (BR-14) | 400 |
+| `INSUFFICIENT_WALLET_FUNDS` | **v1.1 (CR-01):** for every WALLET account the transaction takes money out of, balance before + effect ≥ 0.00 (BR-15 v2). Effect: PAYMENT from the wallet −total; RECEIPT line on the wallet −line; PAYMENT line on the wallet / RECEIPT into the wallet = money in (never checked). Checked **after** all rules above, inside the same database transaction as the insert, with the wallet rows locked (`SELECT … FOR UPDATE`) so two concurrent payments cannot both pass. `details[]` names the wallet and its available balance. | 400 |
 
-When a rule fails, **nothing** is written (NFR-05). Lines on the same account are allowed (e.g. two dining lines). An overdraft is allowed (BR-15).
+When a rule fails, **nothing** is written (NFR-05). Lines on the same account are allowed (e.g. two dining lines). A **bank** overdraft is allowed; a **wallet** cannot go below 0.00 (BR-15 v2, CR-01).
 
 ## Permissions
 USER only (ADMIN → 403). Only the caller's accounts can be used.
@@ -76,7 +77,11 @@ One form with two tabs. The account selects are filtered by the allowed types of
 | AC-05-6 | Tomorrow's date gives `400 DATE_IN_FUTURE`; today's date is accepted. |
 | AC-06-1 | Given alice, when she receives 30,000.00 salary into the bank, then the bank rises by 30,000.00 and Salary = 30,000.00. |
 | AC-06-2 | A receipt with an EXPENSE line, or into a LOAN_TAKEN account, gives `400 ACCOUNT_TYPE_NOT_ALLOWED`. |
+| AC-05-7 | **(CR-01)** Wallet balance 500.00: a payment of 500.00 from the wallet → `201`, wallet = 0.00 (boundary). A payment of 500.01 → `400 INSUFFICIENT_WALLET_FUNDS`; the transaction count and every balance are unchanged. |
+| AC-05-8 | **(CR-01)** A bank account at 0.00 can still pay 100.00 → `201`, bank = −100.00 (overdraft kept). A wallet already at −1.30 (old data) can **receive** money; any further payment from it is refused until it is ≥ the amount. |
+| AC-05-9 | **(CR-01)** Unaffected: bob cannot use alice's wallet (400 `ACCOUNT_NOT_FOUND`, checked before funds, so no balance is revealed); the Administrator gets 403; the lines-equal-total and amount rules return their own codes first. |
 | AC-06-3 | A receipt into the wallet of 3,000.00 = borrowing from "Other loan" 2,000.00 + transfer from bank 1,000.00 raises the wallet by 3,000.00, raises the loan owed by 2,000.00 and lowers the bank by 1,000.00. Income is unchanged. |
+| AC-06-4 | **(CR-01)** A receipt into the bank with a line on the wallet (transfer out of the wallet) of more than the wallet balance → `400 INSUFFICIENT_WALLET_FUNDS`; exactly the wallet balance → `201`, wallet = 0.00. |
 
 ## Software Test Specification
 | Test | Level | AC | Input / precondition | Expected |
@@ -90,7 +95,11 @@ One form with two tabs. The account selects are filtered by the allowed types of
 | TEST-API-32 | API+DB | AC-05-3 | total "0", "1.234" | 400 INVALID_AMOUNT |
 | TEST-API-33 | API+DB | AC-05-4 | payment with Salary line | 400 ACCOUNT_TYPE_NOT_ALLOWED |
 | TEST-API-34 | API+DB | AC-05-5 | alice uses bob's Dining id | 400 ACCOUNT_NOT_FOUND; nothing stored |
-| TEST-API-35 | API+DB | AC-05-6 | tomorrow / today | 400 DATE_IN_FUTURE / 201 |
+| TEST-API-35 | API+DB | AC-05-6 | tomorrow / today (v1.1: paid from **Bangkok Bank Savings** instead of the empty wallet — the setup relied on the v1 overdraft; assertion unchanged) | 400 DATE_IN_FUTURE / 201 |
+| TEST-UNIT-08 | unit | AC-05-7, AC-05-8, AC-06-4 | `walletShortfalls(tx, balances, accounts)` at 500.00/500.01, bank at 0, money into a negative wallet, wallet line in a receipt | [] at the boundary; one shortfall with wallet id and available balance otherwise; banks never listed |
+| TEST-API-37 | API+DB | AC-05-7 | wallet funded 500.00; pay 500.01 then 500.00 | 400 INSUFFICIENT_WALLET_FUNDS + nothing stored; then 201, wallet 0.00 |
+| TEST-API-38 | API+DB | AC-05-8 | bank at 0.00 pays 100.00; wallet at −1.30 (old data, written directly in the DB) receives 10.00, then pays 8.71, then 8.70 | 201, bank −100.00; 201, wallet 8.70; 400 INSUFFICIENT_WALLET_FUNDS; 201, wallet 0.00 |
+| TEST-API-39 | API+DB | AC-06-4, AC-05-9 | receipt into bank with wallet line > / = balance; bob uses alice's wallet; admin | 400 / 201; 400 ACCOUNT_NOT_FOUND; 403 |
 | TEST-API-40 | API+DB | AC-06-1 | salary receipt | bank +30,000.00; Salary 30,000.00 |
 | TEST-API-41 | API+DB | AC-06-2 | receipt with Dining line; receipt into the card | 400 ACCOUNT_TYPE_NOT_ALLOWED ×2 |
 | TEST-API-42 | API+DB | AC-06-3 | borrowing + transfer receipt | wallet +3,000.00, loan +2,000.00, bank −1,000.00, income unchanged |
@@ -101,3 +110,4 @@ One form with two tabs. The account selects are filtered by the allowed types of
 | Version | Date | Change |
 |---|---|---|
 | 1.0 | 14 Nov 2026 | First contract (before implementation) |
+| 1.1 | 27 Nov 2026 | CR-01 (Lab 7, Issue #41): BR-15 v2 wallet cannot go negative — new code `INSUFFICIENT_WALLET_FUNDS`, AC-05-7…9, AC-06-4, TEST-UNIT-08, TEST-API-37…39; TEST-API-35 setup moved off the empty wallet. Written before implementation. |
