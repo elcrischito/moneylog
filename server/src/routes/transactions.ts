@@ -7,6 +7,7 @@ import { AppError, asyncHandler, notFound } from "../http/errors";
 import { validateTransaction } from "../domain/ledger";
 import { todayInBangkok, toDbDate } from "../domain/dates";
 import { toLedgerAccount } from "../services/ledgerData";
+import { assertWalletFunds } from "../services/walletGuard";
 import { loadTransactionDto, transactionDto, TRANSACTION_INCLUDE } from "../services/transactionDto";
 
 export const transactionsRouter = Router();
@@ -22,8 +23,11 @@ transactionsRouter.post(
 
     const v = result.value;
     // NFR-05: the transaction and all its lines are written in one database transaction.
-    const created = await prisma.$transaction(async (tx) =>
-      tx.transaction.create({
+    // CR-01: the wallet check runs last (after ownership/type rules) and in the same DB transaction.
+    const accountsMap = new Map(own.map((a) => [a.id, toLedgerAccount(a)]));
+    const created = await prisma.$transaction(async (tx) => {
+      await assertWalletFunds(tx, ownerId, v, accountsMap);
+      return tx.transaction.create({
         data: {
           ownerId,
           kind: v.kind,
@@ -33,8 +37,8 @@ transactionsRouter.post(
           primaryAccountId: v.primaryAccountId,
           lines: { create: v.lines.map((l, position) => ({ accountId: l.accountId, amount: l.amount, position })) },
         },
-      }),
-    );
+      });
+    });
     res.status(201).json({ transaction: await loadTransactionDto(ownerId, created.id) });
   }),
 );

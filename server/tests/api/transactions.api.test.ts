@@ -103,11 +103,25 @@ describe("F-05/F-06 recording transactions", () => {
 
   it("TEST-API-35: tomorrow is rejected, today is accepted (AC-05-6, BR-14)", async () => {
     const tomorrow = new Date(Date.parse(`${TODAY}T00:00:00Z`) + 86400000).toISOString().slice(0, 10);
-    const body = (date: string) => ({ kind: "PAYMENT", date, accountId: ids["Wallet"], total: "10.00", lines: [{ accountId: ids["Telecom"], amount: "10.00" }] });
+    // v1.1 (CR-01): paid from the bank — the empty wallet relied on the BR-15 v1 overdraft; the date assertion is unchanged.
+    const body = (date: string) => ({ kind: "PAYMENT", date, accountId: ids["Bangkok Bank Savings"], total: "10.00", lines: [{ accountId: ids["Telecom"], amount: "10.00" }] });
     const future = await post(body(tomorrow));
     expect(future.status).toBe(400);
     expect(future.body.error.code).toBe("DATE_IN_FUTURE");
     expect((await post(body(TODAY))).status).toBe(201);
+  });
+
+  it("TEST-API-36 (#47 regression): a future-dated payment stores nothing and changes no balance (AC-05-6, BR-14)", async () => {
+    // Found by the independent UAT team on be84770 (UAT-02 step 4): tomorrow was accepted and saved.
+    const u = await newUserWithAccounts("future47");
+    const tomorrow = new Date(Date.parse(`${TODAY}T00:00:00Z`) + 86400000).toISOString().slice(0, 10);
+    const before = await balances(u.token);
+    const res = await post({ kind: "PAYMENT", date: tomorrow, description: "UAT-02 future date probe", accountId: u.ids["Wallet"], total: "1.00",
+      lines: [{ accountId: u.ids["Dining"], amount: "1.00" }] }, u.token);
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe("DATE_IN_FUTURE");
+    expect(await prisma.transaction.count({ where: { ownerId: u.user.id } })).toBe(0);
+    expect(await balances(u.token)).toEqual(before);
   });
 
   it("TEST-API-40: salary received raises the bank balance and the income account (AC-06-1)", async () => {

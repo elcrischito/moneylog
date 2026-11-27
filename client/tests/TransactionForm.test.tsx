@@ -2,6 +2,7 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { vi } from "vitest";
 import { TransactionForm } from "../src/components/TransactionForm";
+import { todayIso } from "../src/lib/format";
 import type { Account } from "../src/lib/types";
 
 const a = (id: string, name: string, type: Account["type"], subtype: Account["subtype"] = null): Account => ({
@@ -32,5 +33,14 @@ describe("Transaction form", () => {
 
     // income accounts are not offered as payment lines (BR-08)
     expect(screen.queryByRole("option", { name: /Salary/ })).not.toBeInTheDocument();
+  });
+
+  it("TEST-UI-03 (#47 regression): the date picker offers no day after today (AC-05-6, BR-14)", () => {
+    // Found by the independent UAT team on be84770 (UAT-02 step 4): the Date field had no maximum.
+    render(<TransactionForm accounts={accounts} onSubmit={vi.fn(async () => {})} />);
+    const date = screen.getByLabelText("Date");
+    expect(date).toHaveAttribute("type", "date");
+    expect(date).toHaveAttribute("max", todayIso());
+    expect(date).toHaveValue(todayIso());
   });
 });
