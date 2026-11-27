@@ -19,7 +19,7 @@ Totals: `cash` = sum of CASH balances; `creditCardDebt` = sum of LOAN_TAKEN with
 
 ## Rules, validation, failure and boundary cases
 - Balances are derived on every read; no balance column exists (decision D-01).
-- A negative Cash balance is allowed and shown in red (BR-15).
+- A negative Cash balance is shown in red. Since CR-01 (BR-15 v2) only a **bank** account can become negative through new transactions; a wallet can only be negative in data recorded before the change.
 - Opening balance: the account must be the caller's and of type CASH, LOAN_GIVEN or LOAN_TAKEN (`400 OPENING_BALANCE_NOT_ALLOWED`); amount ≥ 0 with ≤ 2 decimals and ≤ 9,999,999.99 (`400 INVALID_AMOUNT`); date `YYYY-MM-DD`, not in the future (`400 DATE_IN_FUTURE`). `0` is allowed (boundary).
 - Another user's or an unknown account id gives `404 NOT_FOUND` (BR-01).
 

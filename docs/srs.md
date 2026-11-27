@@ -4,7 +4,7 @@
 |---|---|
 | Product | MoneyLog — Personal Money and Expense Logging System (CPE 334 theme 7) |
 | Team | EN-049 `elcrischito` (one member: Mamadou, student ID 69540460047) |
-| Version | 1.0 — Sprint 1 baseline, 14 Nov 2026 |
+| Version | 1.1 — 27 Nov 2026: BR-15 changed by CR-01 (Lab 7, Issue #41). 1.0 = Sprint 1 baseline, 14 Nov 2026 |
 | Status | Baseline for Sprints 1–3. Changes are recorded in Section 8. |
 
 ## 1. Stakeholder problem and context
@@ -85,7 +85,7 @@ Period budgets, shared budgets, automatic recurring transactions, bank or card i
 | BR-12 | Only INCOME lines count as income and only EXPENSE lines count as expense. Transfers, borrowing, loan repayments and opening balances are never counted as income or expense. | 1 |
 | BR-13 | Opening balances exist only for CASH, LOAN_GIVEN and LOAN_TAKEN accounts, are ≥ 0, and have an opening date. Recording it again replaces the previous opening balance (one per account). | 1 |
 | BR-14 | A transaction date is required and cannot be later than today (Asia/Bangkok). | 1 |
-| BR-15 | A Cash balance may go below zero (overdraft is recorded, not blocked); no credit limit is enforced. | 1 |
+| BR-15 | **v2 (CR-01, 27 Nov 2026):** a **Wallet** (CASH/WALLET) balance can never go below 0.00. A transaction that takes money **out** of a wallet (a payment *from* the wallet, or a receipt line *on* the wallet = transfer out of it) is refused when that wallet's balance after the transaction would be < 0.00; exactly 0.00 is allowed. Money **into** a wallet is always allowed, even when it is negative today. **Bank** accounts (CASH/BANK) may still go below zero (overdraft recorded, not blocked); no credit limit is enforced on loans. *v1 (Sprint 1): any Cash balance may go below zero.* | 1 / v2 Lab 7 |
 | BR-16 | A correction replaces the transaction atomically; a deleted transaction no longer affects balances or summaries. | 2 |
 | BR-17 | Duplicate never changes the original. The new transaction is saved only when the user submits it, and it is validated like any new transaction. Favorites belong to their owner. | 3 |
 
@@ -129,7 +129,7 @@ Period budgets, shared budgets, automatic recurring transactions, bank or card i
 | D-02 | Store money as decimal or integer? | Integer satang in the database and domain code (NFR-04); the API exchanges decimal strings such as `"1250.50"`. |
 | D-03 | JWT or server-side sessions? | Server-side opaque sessions in PostgreSQL, so logout and disabling a user take effect immediately (FR-02, BR-03) and sessions survive redeploys. |
 | D-04 | Can a payment line use an Income account, or a receipt line an Expense account (e.g. a shop refund)? | No (BR-08, BR-09). Refunds are out of scope for Sprint 1; open question Q-01 tracks them for Sprint 2. |
-| D-05 | Is a negative Cash balance an error? | No, it is recorded (BR-15); the UI highlights it. |
+| D-05 | Is a negative Cash balance an error? | Sprint 1: no, it is recorded and highlighted. **Changed by CR-01 (Lab 7):** a wallet may not go negative (physical cash cannot be overspent; a negative wallet always means a missing or wrong entry); a bank overdraft stays allowed and highlighted. Existing negative wallets are not migrated (BR-15 v2). |
 | D-06 | How should the API answer a request for another user's record? | `404 Not Found`, so the API does not reveal that the record exists (BR-01). Administrators get `403` on all financial routes (BR-02). |
 | D-07 | Are financial accounts created by users in Sprint 1? | No. Sprint 1 seeds them (as in the theme's Sprint 1 example); account management is F-09 in Sprint 2. |
 | D-08 | Team size | Team EN-049 has one member (registered as *Solo*). Teammate review is replaced by a written self-review on each PR; this is disclosed in Part F. |
