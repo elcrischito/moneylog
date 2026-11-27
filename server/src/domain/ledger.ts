@@ -269,3 +269,38 @@ export function summarize(transactions: LedgerTransaction[], accounts: Map<strin
     net: incomeTotal - expenseTotal,
   };
 }
+
+export interface WalletShortfall {
+  accountId: string;
+  available: number; // satang, balance before the transaction
+  after: number; // satang, balance the transaction would leave
+}
+
+/**
+ * BR-15 v2 (CR-01, Lab 7): a WALLET balance can never go below 0.00.
+ * Returns every wallet the transaction takes money OUT of whose balance would end below 0.
+ * Money into a wallet is never refused, even when the wallet is already negative (old data).
+ * Bank accounts and every other type are never listed (bank overdraft stays allowed).
+ * @param balances balances BEFORE the transaction (computeBalances)
+ */
+export function walletShortfalls(
+  tx: Pick<LedgerTransaction, "kind" | "primaryAccountId" | "total" | "lines">,
+  balances: Map<string, number>,
+  accounts: Map<string, LedgerAccount>,
+): WalletShortfall[] {
+  // Net effect on each CASH balance (CASH is debit-normal, BR-11).
+  const delta = new Map<string, number>();
+  const add = (id: string, v: number) => delta.set(id, (delta.get(id) ?? 0) + v);
+  const sign = tx.kind === "PAYMENT" ? -1 : 1; // payment credits the primary, receipt debits it
+  add(tx.primaryAccountId, sign * tx.total);
+  for (const l of tx.lines) add(l.accountId, -sign * l.amount);
+
+  const out: WalletShortfall[] = [];
+  for (const [id, d] of delta) {
+    const a = accounts.get(id);
+    if (!a || a.type !== "CASH" || a.subtype !== "WALLET" || d >= 0) continue;
+    const available = balances.get(id) ?? a.openingBalance;
+    if (available + d < 0) out.push({ accountId: id, available, after: available + d });
+  }
+  return out;
+}
