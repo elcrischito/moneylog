@@ -269,3 +269,21 @@ export function summarize(transactions: LedgerTransaction[], accounts: Map<strin
     net: incomeTotal - expenseTotal,
   };
 }
+
+export interface WalletShortfall {
+  accountId: string;
+  available: number; // satang, balance before the transaction
+  after: number; // satang, balance the transaction would leave
+}
+
+/**
+ * BR-15 v2 (CR-01, Lab 7): a WALLET balance can never go below 0.00.
+ * RED stub — implemented in the GREEN commit.
+ */
+export function walletShortfalls(
+  _tx: Pick<LedgerTransaction, "kind" | "primaryAccountId" | "total" | "lines">,
+  _balances: Map<string, number>,
+  _accounts: Map<string, LedgerAccount>,
+): WalletShortfall[] {
+  return [];
+}

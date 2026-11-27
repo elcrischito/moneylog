@@ -103,7 +103,8 @@ describe("F-05/F-06 recording transactions", () => {
 
   it("TEST-API-35: tomorrow is rejected, today is accepted (AC-05-6, BR-14)", async () => {
     const tomorrow = new Date(Date.parse(`${TODAY}T00:00:00Z`) + 86400000).toISOString().slice(0, 10);
-    const body = (date: string) => ({ kind: "PAYMENT", date, accountId: ids["Wallet"], total: "10.00", lines: [{ accountId: ids["Telecom"], amount: "10.00" }] });
+    // v1.1 (CR-01): paid from the bank — the empty wallet relied on the BR-15 v1 overdraft; the date assertion is unchanged.
+    const body = (date: string) => ({ kind: "PAYMENT", date, accountId: ids["Bangkok Bank Savings"], total: "10.00", lines: [{ accountId: ids["Telecom"], amount: "10.00" }] });
     const future = await post(body(tomorrow));
     expect(future.status).toBe(400);
     expect(future.body.error.code).toBe("DATE_IN_FUTURE");
