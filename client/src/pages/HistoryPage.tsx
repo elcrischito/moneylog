@@ -1,14 +1,17 @@
 import { Fragment, useEffect, useState } from "react";
 import { useApi } from "../lib/useApi";
 import { thb } from "../lib/format";
-import type { Transaction } from "../lib/types";
+import type { AccountsResponse, Transaction } from "../lib/types";
+import { FilterBar } from "../components/FilterBar";
 import { LoadState } from "../components/LoadState";
 import { Link } from "../lib/router";
 import { api, ApiError } from "../lib/api";
 
 // F-08: own transactions, newest first; each row can show its allocation lines.
 export function HistoryPage() {
-  const { data, error, loading, reload } = useApi<{ transactions: Transaction[] }>("/api/transactions");
+  const [query, setQuery] = useState("");
+  const { data, error, loading, reload } = useApi<{ transactions: Transaction[]; count: number }>(`/api/transactions${query}`);
+  const accounts = useApi<AccountsResponse>("/api/accounts");
   const [open, setOpen] = useState<Set<string>>(new Set());
   // Read the one-time "saved" message; remove it in an effect (StrictMode runs initializers twice).
   const [flash] = useState(() => sessionStorage.getItem("moneylog.flash"));
@@ -49,8 +52,15 @@ export function HistoryPage() {
           {actionError}
         </div>
       )}
+      {accounts.data && <FilterBar accounts={accounts.data.accounts} onApply={setQuery} />}
       <LoadState loading={loading && !data} error={error} onRetry={reload} />
-      {data && data.transactions.length === 0 && (
+      {data && query && (
+        <p className="muted" role="status" aria-live="polite">
+          {data.count} transaction{data.count === 1 ? "" : "s"}
+        </p>
+      )}
+      {data && query && data.transactions.length === 0 && <div className="card">No transaction matches these filters.</div>}
+      {data && !query && data.transactions.length === 0 && (
         <div className="card">
           No transactions yet — <Link to="/transactions/new">record your first one</Link>.
         </div>

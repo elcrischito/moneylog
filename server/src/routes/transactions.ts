@@ -5,6 +5,8 @@ import { Router } from "express";
 import { prisma } from "../prisma";
 import { AppError, asyncHandler, notFound } from "../http/errors";
 import { validateTransaction } from "../domain/ledger";
+import { parseTransactionFilter } from "../domain/filter";
+import type { Prisma } from "@prisma/client";
 import { todayInBangkok, toDbDate } from "../domain/dates";
 import { toLedgerAccount } from "../services/ledgerData";
 import { assertWalletFunds } from "../services/walletGuard";
@@ -43,19 +45,36 @@ transactionsRouter.post(
   }),
 );
 
-// F-08 history: own transactions only, newest first (BR-01).
+// F-08 history + F-12 filters: own transactions only, newest first (BR-01).
+// The owner condition is always applied first; no parameter can widen it.
 transactionsRouter.get(
   "/",
   asyncHandler(async (req, res) => {
-    const requested = Number(req.query.limit);
-    const take = Number.isInteger(requested) && requested > 0 ? Math.min(requested, 200) : 50;
-    const rows = await prisma.transaction.findMany({
-      where: { ownerId: req.user!.id },
+    const parsed = parseTransactionFilter(req.query as Record<string, unknown>);
+    if (!parsed.ok) throw new AppError(400, parsed.error.code, parsed.error.message, parsed.error.details);
+    const f = parsed.value;
+    const where: Prisma.TransactionWhereInput = { ownerId: req.user!.id };
+    const and: Prisma.TransactionWhereInput[] = [];
+    if (f.from || f.to) where.date = { ...(f.from ? { gte: toDbDate(f.from) } : {}), ...(f.to ? { lte: toDbDate(f.to) } : {}) };
+    if (f.kind) where.kind = f.kind;
+    if (f.min !== undefined || f.max !== undefined) {
+      where.totalAmount = { ...(f.min !== undefined ? { gte: f.min } : {}), ...(f.max !== undefined ? { lte: f.max } : {}) };
+    }
+    if (f.accountId) and.push({ OR: [{ primaryAccountId: f.accountId }, { lines: { some: { accountId: f.accountId } } }] });
+    if (and.length) where.AND = and;
+
+    let rows = await prisma.transaction.findMany({
+      where,
       include: TRANSACTION_INCLUDE,
       orderBy: [{ date: "desc" }, { createdAt: "desc" }],
-      take,
+      take: f.q ? undefined : f.limit,
     });
-    res.json({ transactions: rows.map(transactionDto) });
+    // Text search: case-insensitive "contains", with % and _ as literal characters.
+    if (f.q) {
+      const needle = f.q.toLocaleLowerCase();
+      rows = rows.filter((t) => t.description.toLocaleLowerCase().includes(needle)).slice(0, f.limit);
+    }
+    res.json({ transactions: rows.map(transactionDto), count: rows.length });
   }),
 );
 
