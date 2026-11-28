@@ -73,3 +73,7 @@ dl.totals > div { flex: 1 1 140px; }
 dl.totals dt { color: #616e7c; font-size: 14px; }
 dl.totals dd { margin: 2px 0 0; font-size: 20px; font-weight: 700; }
 button.link.danger { color: var(--danger); }
+
+/* F-13 spending bars */
+.bar { background: #eceff3; border-radius: 4px; height: 10px; min-width: 60px; }
+.bar-fill { background: var(--brand); border-radius: 4px; height: 10px; }

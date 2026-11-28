@@ -11,6 +11,7 @@ import { accountsRouter } from "./routes/accounts";
 import { transactionsRouter } from "./routes/transactions";
 import { summaryRouter } from "./routes/summary";
 import { loansRouter } from "./routes/loans";
+import { spendingRouter } from "./routes/spending";
 import { requireAuth, requireRole } from "./middleware/auth";
 import "./auth/types";
 
@@ -40,11 +41,12 @@ export function createApp() {
   // Access foundation (System SDS §5): administrator routes are ADMIN only and every
   // financial route is USER only, so an administrator never reaches financial data (BR-02).
   app.use("/api/admin", requireAuth, requireRole("ADMIN"), adminRouter);
-  app.use(["/api/accounts", "/api/transactions", "/api/summary", "/api/loans"], requireAuth, requireRole("USER"));
+  app.use(["/api/accounts", "/api/transactions", "/api/summary", "/api/loans", "/api/spending"], requireAuth, requireRole("USER"));
   app.use("/api/accounts", accountsRouter);
   app.use("/api/transactions", transactionsRouter);
   app.use("/api/summary", summaryRouter);
   app.use("/api/loans", loansRouter);
+  app.use("/api/spending", spendingRouter);
 
   app.use("/api", (_req, res) => {
     res.status(404).json({ error: { code: "NOT_FOUND", message: "Not found." } });
