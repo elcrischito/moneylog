@@ -4,7 +4,8 @@ import { resetDemoData, signIn } from "./helpers";
 
 async function balance(page: Page, name: string) {
   await page.getByRole("link", { name: "Dashboard" }).click();
-  return (await page.getByTestId(`balance-${name}`).textContent())?.trim();
+  const text = (await page.getByTestId(`balance-${name}`).textContent()) ?? "";
+  return /-?฿[\d,]+\.\d{2}/.exec(text)?.[0]; // the balance cell of the dashboard row
 }
 
 test("TEST-E2E-20: record, edit and delete a card purchase", async ({ page }) => {
