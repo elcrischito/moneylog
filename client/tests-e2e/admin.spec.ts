@@ -8,7 +8,8 @@ test("TEST-E2E-02: admin disables Bob, Bob cannot sign in, the admin gets 403 on
   await signIn(page, "admin@moneylog.test");
   await expect(page.getByRole("heading", { name: "Users" })).toBeVisible();
   const nav = page.getByRole("navigation", { name: "Main" });
-  await expect(nav.getByRole("link")).toHaveText(["Users"]);
+  // F-17 contract v1.0 adds "Change password" for every role; the admin still has no financial link (BR-02).
+  await expect(nav.getByRole("link")).toHaveText(["Users", "Password"]);
 
   await page.getByRole("button", { name: "Disable Bob Chen" }).click();
   await expect(page.getByRole("row", { name: /Bob Chen/ })).toContainText("Disabled");
