@@ -67,3 +67,8 @@ export interface SpendingResponse {
   total: string;
   categories: { accountId: string; name: string; amount: string; share: string }[];
 }
+
+// F-16
+export interface ReportsResponse {
+  months: { month: string; from: string; to: string; income: string; expense: string; net: string; netPosition: string }[];
+}

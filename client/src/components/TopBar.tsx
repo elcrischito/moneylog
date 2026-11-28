@@ -9,6 +9,7 @@ const USER_LINKS = [
   { to: "/summary", label: "Summary" },
   { to: "/loans", label: "Loans" },
   { to: "/spending", label: "Spending" },
+  { to: "/reports", label: "Reports" },
 ];
 const ADMIN_LINKS = [{ to: "/admin/users", label: "Users" }];
 

@@ -81,3 +81,10 @@ button.link.danger { color: var(--danger); }
 /* F-14 favorites */
 button.link.star { text-decoration: none; font-size: 18px; line-height: 1; color: #b7791f; }
 label.checkbox { display: inline-flex; gap: 6px; align-items: center; font-weight: normal; }
+
+/* F-16 report chart */
+.report-chart { display: flex; gap: 8px; align-items: flex-end; height: 120px; margin-bottom: 12px; overflow-x: auto; }
+.report-col { flex: 1 0 28px; display: flex; flex-direction: column; align-items: center; height: 100%; }
+.report-bars { flex: 1; display: flex; gap: 2px; align-items: flex-end; width: 100%; justify-content: center; }
+.bar-income { width: 40%; background: var(--brand); border-radius: 3px 3px 0 0; }
+.bar-expense { width: 40%; background: #c05621; border-radius: 3px 3px 0 0; }
