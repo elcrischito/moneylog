@@ -145,7 +145,16 @@ export interface ValidTransaction {
  * @param accounts the caller's own accounts only — an id that is not in this map
  *                 (unknown, or another user's) is reported as ACCOUNT_NOT_FOUND (BR-10).
  */
-export function validateTransaction(input: unknown, accounts: Map<string, LedgerAccount>, today: string): Result<ValidTransaction> {
+/**
+ * F-11 (edit): an inactive account is accepted only in the role the original transaction
+ * already used it in (primary, or one of the lines). RED stub: not used yet.
+ */
+export interface AllowInactive {
+  primary?: string;
+  lines?: ReadonlySet<string>;
+}
+
+export function validateTransaction(input: unknown, accounts: Map<string, LedgerAccount>, today: string, _allowInactive: AllowInactive = {}): Result<ValidTransaction> {
   const body = (input ?? {}) as Record<string, unknown>;
   const shape: { field: string; message: string }[] = [];
   if (body.kind !== "PAYMENT" && body.kind !== "RECEIPT") shape.push({ field: "kind", message: "Kind must be PAYMENT or RECEIPT." });
