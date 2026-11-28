@@ -95,6 +95,7 @@ export function HistoryPage() {
                         {open.has(t.id) ? "Hide lines" : `Show lines (${t.lines.length})`}
                       </button>{" "}
                       <Link to={`/transactions/${t.id}/edit`}>Edit</Link>{" "}
+                      <Link to={`/transactions/new?from=${t.id}`}>Duplicate</Link>{" "}
                       <button type="button" className="link danger" onClick={() => remove(t)} aria-label={`Delete ${t.description || "transaction"} of ${t.date}`}>
                         Delete
                       </button>
