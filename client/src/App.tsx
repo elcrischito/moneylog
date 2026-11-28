@@ -9,6 +9,7 @@ import { NewTransactionPage } from "./pages/NewTransactionPage";
 import { HistoryPage } from "./pages/HistoryPage";
 import { SummaryPage } from "./pages/SummaryPage";
 import { LoansPage } from "./pages/LoansPage";
+import { SpendingPage } from "./pages/SpendingPage";
 import { EditTransactionPage } from "./pages/EditTransactionPage";
 import { TopBar } from "./components/TopBar";
 
@@ -20,6 +21,7 @@ const userRoutes: Record<string, () => ReactElement> = {
   "/transactions": () => <HistoryPage />,
   "/summary": () => <SummaryPage />,
   "/loans": () => <LoansPage />,
+  "/spending": () => <SpendingPage />,
 };
 const adminRoutes: Record<string, () => ReactElement> = {
   "/admin/users": () => <UsersPage />,

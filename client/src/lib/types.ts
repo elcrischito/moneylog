@@ -58,3 +58,11 @@ export interface LoansResponse {
   given: LoanRow[];
   totals: { taken: string; given: string; net: string };
 }
+
+// F-13
+export interface SpendingResponse {
+  from: string;
+  to: string;
+  total: string;
+  categories: { accountId: string; name: string; amount: string; share: string }[];
+}
