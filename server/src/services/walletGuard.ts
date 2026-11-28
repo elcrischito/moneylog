@@ -12,7 +12,11 @@ import { toLedgerAccount } from "./ledgerData";
 type Tx = Prisma.TransactionClient;
 type Candidate = Pick<LedgerTransaction, "kind" | "primaryAccountId" | "total" | "lines">;
 
-export async function assertWalletFunds(tx: Tx, ownerId: string, candidate: Candidate, accounts: Map<string, LedgerAccount>) {
+/**
+ * @param excludeTransactionId F-11 edit: the original transaction is left out, so the check
+ *        uses the wallet balance without its old effect (contract F-11 v1.1, AC-11-7).
+ */
+export async function assertWalletFunds(tx: Tx, ownerId: string, candidate: Candidate, accounts: Map<string, LedgerAccount>, excludeTransactionId?: string) {
   const ids = [candidate.primaryAccountId, ...candidate.lines.map((l) => l.accountId)];
   const walletIds = [...new Set(ids)].filter((id) => accounts.get(id)?.subtype === "WALLET");
   if (walletIds.length === 0) return;
@@ -23,7 +27,7 @@ export async function assertWalletFunds(tx: Tx, ownerId: string, candidate: Cand
 
   const rows = await tx.financialAccount.findMany({ where: { ownerId, id: { in: walletIds } } });
   const txns = await tx.transaction.findMany({
-    where: { ownerId, OR: [{ primaryAccountId: { in: walletIds } }, { lines: { some: { accountId: { in: walletIds } } } }] },
+    where: { ownerId, ...(excludeTransactionId ? { id: { not: excludeTransactionId } } : {}), OR: [{ primaryAccountId: { in: walletIds } }, { lines: { some: { accountId: { in: walletIds } } } }] },
     include: { lines: true },
   });
   const ledgerAccounts = rows.map(toLedgerAccount);

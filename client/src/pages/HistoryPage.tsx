@@ -4,6 +4,7 @@ import { thb } from "../lib/format";
 import type { Transaction } from "../lib/types";
 import { LoadState } from "../components/LoadState";
 import { Link } from "../lib/router";
+import { api, ApiError } from "../lib/api";
 
 // F-08: own transactions, newest first; each row can show its allocation lines.
 export function HistoryPage() {
@@ -14,6 +15,20 @@ export function HistoryPage() {
   useEffect(() => {
     sessionStorage.removeItem("moneylog.flash");
   }, []);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [actionError, setActionError] = useState("");
+  // F-11: delete after confirmation; no undo in Sprint 2.
+  const remove = async (t: Transaction) => {
+    if (!window.confirm("Delete this transaction? Balances will change.")) return;
+    setActionError("");
+    try {
+      await api(`/api/transactions/${t.id}`, { method: "DELETE" });
+      setNotice("Transaction deleted.");
+      reload();
+    } catch (err) {
+      setActionError(err instanceof ApiError ? err.message : "Could not delete the transaction.");
+    }
+  };
   const toggle = (id: string) =>
     setOpen((s) => {
       const n = new Set(s);
@@ -24,9 +39,14 @@ export function HistoryPage() {
   return (
     <>
       <h2>History</h2>
-      {flash && (
+      {(notice ?? flash) && (
         <div className="success" role="status">
-          {flash}
+          {notice ?? flash}
+        </div>
+      )}
+      {actionError && (
+        <div className="alert" role="alert">
+          {actionError}
         </div>
       )}
       <LoadState loading={loading && !data} error={error} onRetry={reload} />
@@ -57,9 +77,13 @@ export function HistoryPage() {
                     <td>{t.account.name}</td>
                     <td>{t.description || <span className="muted">—</span>}</td>
                     <td className="num">{thb(t.total)}</td>
-                    <td className="num">
+                    <td className="num" style={{ whiteSpace: "nowrap" }}>
                       <button type="button" className="link" aria-expanded={open.has(t.id)} onClick={() => toggle(t.id)}>
                         {open.has(t.id) ? "Hide lines" : `Show lines (${t.lines.length})`}
+                      </button>{" "}
+                      <Link to={`/transactions/${t.id}/edit`}>Edit</Link>{" "}
+                      <button type="button" className="link danger" onClick={() => remove(t)} aria-label={`Delete ${t.description || "transaction"} of ${t.date}`}>
+                        Delete
                       </button>
                     </td>
                   </tr>

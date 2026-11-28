@@ -145,7 +145,16 @@ export interface ValidTransaction {
  * @param accounts the caller's own accounts only — an id that is not in this map
  *                 (unknown, or another user's) is reported as ACCOUNT_NOT_FOUND (BR-10).
  */
-export function validateTransaction(input: unknown, accounts: Map<string, LedgerAccount>, today: string): Result<ValidTransaction> {
+/**
+ * F-11 (edit): an inactive account is accepted only in the role the original transaction
+ * already used it in (primary, or one of the lines).
+ */
+export interface AllowInactive {
+  primary?: string;
+  lines?: ReadonlySet<string>;
+}
+
+export function validateTransaction(input: unknown, accounts: Map<string, LedgerAccount>, today: string, allowInactive: AllowInactive = {}): Result<ValidTransaction> {
   const body = (input ?? {}) as Record<string, unknown>;
   const shape: { field: string; message: string }[] = [];
   if (body.kind !== "PAYMENT" && body.kind !== "RECEIPT") shape.push({ field: "kind", message: "Kind must be PAYMENT or RECEIPT." });
@@ -186,10 +195,12 @@ export function validateTransaction(input: unknown, accounts: Map<string, Ledger
   // BR-10 ownership and active accounts
   const primary = accounts.get(body.accountId as string);
   const missing: { field: string; message: string }[] = [];
-  if (!primary || !primary.isActive) missing.push({ field: "accountId", message: "Account not found." });
+  const usable = (a: LedgerAccount | undefined, keptInRole: boolean) => !!a && (a.isActive || keptInRole);
+  if (!usable(primary, allowInactive.primary === body.accountId)) missing.push({ field: "accountId", message: "Account not found." });
   lines.forEach((l, i) => {
-    const a = accounts.get(l.accountId);
-    if (!a || !a.isActive) missing.push({ field: `lines[${i}].accountId`, message: "Account not found." });
+    if (!usable(accounts.get(l.accountId), allowInactive.lines?.has(l.accountId) ?? false)) {
+      missing.push({ field: `lines[${i}].accountId`, message: "Account not found." });
+    }
   });
   if (missing.length > 0 || !primary) return fail("ACCOUNT_NOT_FOUND", "One or more accounts do not exist.", missing);
 
