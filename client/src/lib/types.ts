@@ -40,3 +40,21 @@ export interface SummaryResponse {
   expense: { total: string; byAccount: { accountId: string; name: string; amount: string }[] };
   net: string;
 }
+
+// F-10
+export interface LoanRow {
+  id: string;
+  name: string;
+  subtype: Account["subtype"];
+  isActive: boolean;
+  outstanding: string;
+  openingBalance: string;
+  openingDate: string | null;
+  lastActivity: string | null;
+  status: "OPEN" | "SETTLED" | "OVERPAID";
+}
+export interface LoansResponse {
+  taken: LoanRow[];
+  given: LoanRow[];
+  totals: { taken: string; given: string; net: string };
+}

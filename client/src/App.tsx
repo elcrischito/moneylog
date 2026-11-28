@@ -8,6 +8,7 @@ import { AccountsPage } from "./pages/AccountsPage";
 import { NewTransactionPage } from "./pages/NewTransactionPage";
 import { HistoryPage } from "./pages/HistoryPage";
 import { SummaryPage } from "./pages/SummaryPage";
+import { LoansPage } from "./pages/LoansPage";
 import { TopBar } from "./components/TopBar";
 
 // Route table per role. The server enforces the same rules (System SDS §5).
@@ -17,6 +18,7 @@ const userRoutes: Record<string, () => ReactElement> = {
   "/transactions/new": () => <NewTransactionPage />,
   "/transactions": () => <HistoryPage />,
   "/summary": () => <SummaryPage />,
+  "/loans": () => <LoansPage />,
 };
 const adminRoutes: Record<string, () => ReactElement> = {
   "/admin/users": () => <UsersPage />,
