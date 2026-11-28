@@ -72,3 +72,4 @@ dl.totals { display: flex; flex-wrap: wrap; gap: 16px; margin: 0; }
 dl.totals > div { flex: 1 1 140px; }
 dl.totals dt { color: #616e7c; font-size: 14px; }
 dl.totals dd { margin: 2px 0 0; font-size: 20px; font-weight: 700; }
+button.link.danger { color: var(--danger); }
