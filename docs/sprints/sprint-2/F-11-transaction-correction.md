@@ -4,7 +4,7 @@
 |---|---|
 | Requirements | FR-15, BR-16, BR-06…BR-14, BR-01, NFR-05 |
 | Depends on | F-05, F-06, F-08 |
-| Version | 1.0 (27 Nov 2026), written before implementation (Issue #51) |
+| Version | 1.1 (28 Nov 2026) — wallet rule of CR-01 (BR-15 v2) added before implementation; 1.0 (27 Nov 2026), Issue #51 |
 
 A user can correct a mistake: change any field or line of their own transaction, or delete it. Balances, summaries, loans and spending are derived, so they reflect the correction at once (BR-16).
 
@@ -26,6 +26,7 @@ A user can correct a mistake: change any field or line of their own transaction,
 - **Inactive accounts (F-09):** an account deactivated after the transaction was recorded may stay in the corrected transaction **only if the original already used it in the same role** (primary or line). Any other use of an inactive account → 400 `ACCOUNT_NOT_FOUND`. This lets the user fix the description or the date of an old transaction without reactivating accounts.
 - **Atomic:** if any rule fails, the stored transaction is unchanged, with the same lines and amounts (NFR-05).
 - **Not found:** an unknown id, or another user's transaction → `404 NOT_FOUND`. It is never revealed and never changed (BR-01).
+- **Wallet ≥ 0.00 (BR-15 v2, CR-01, v1.1):** the corrected transaction must not leave any wallet it takes money out of below 0.00. The check uses the wallet balance **without the original transaction** (its old effect is removed first), runs in the same database transaction as the replacement, and returns `400 INSUFFICIENT_WALLET_FUNDS`. Example: wallet 0.00 after paying 100.00 from it; editing that payment to 100.00 → allowed; to 100.01 → refused. **Delete** is never blocked by this rule: removing a payment only gives money back; removing a receipt into a wallet that was then spent may leave it negative — this is allowed and shown in red (a correction of a wrong record must stay possible).
 - **Delete is permanent:** Sprint 2 has no undo. The confirmation dialog is the safeguard.
 
 ## Permissions
@@ -47,6 +48,7 @@ USER only, own transactions only (ADMIN → 403).
 - **AC-11-3** Deleting the 30,000.00 salary removes it from History. Bangkok Bank Savings drops by 30,000.00 and the month's income drops by 30,000.00. Its lines are gone from the database.
 - **AC-11-4** Bob's PUT or DELETE on Alice's transaction → 404, and Alice's transaction is unchanged. The Administrator → 403.
 - **AC-11-5** After Dining is deactivated, an old transaction with a Dining line can still be edited (description changed). Adding a **new** line on a different inactive account → 400 `ACCOUNT_NOT_FOUND`.
+- **AC-11-7** *(v1.1, CR-01)* Wallet 100.00, pay 100.00 from it (wallet 0.00). Editing that payment's description keeps 100.00 → 200; editing it to 100.01 → 400 `INSUFFICIENT_WALLET_FUNDS` and the stored transaction is unchanged.
 - **AC-11-6** Changing the kind from PAYMENT to RECEIPT with valid RECEIPT accounts is accepted. Balances follow the new kind.
 
 ## Tests (STS)
@@ -60,6 +62,7 @@ USER only, own transactions only (ADMIN → 403).
 | TEST-API-93 | API + DB | Bob PUT/DELETE on Alice's tx; admin | 404 and unchanged; 403 (AC-11-4) |
 | TEST-API-94 | API + DB | deactivate Dining, edit old tx; add another inactive account | 200; then 400 (AC-11-5) |
 | TEST-API-95 | API + DB | PAYMENT → RECEIPT | 200; balances follow (AC-11-6) |
+| TEST-API-96 | API + DB | wallet 100.00 fully spent; PUT same 100.00 (new description), then 100.01 | 200; 400 INSUFFICIENT_WALLET_FUNDS, unchanged (AC-11-7) |
 | TEST-UI-12 | component | TransactionForm with `initial` | fields pre-filled; submit sends the edited body |
 | TEST-E2E-20 | E2E (Playwright) | record → edit → delete through the UI | balances on Accounts follow each step |
 
@@ -70,3 +73,4 @@ The Sprint 1 product DoD applies.
 | Version | Date | Change |
 |---|---|---|
 | 1.0 | 27 Nov 2026 | First contract, before implementation |
+| 1.1 | 28 Nov 2026 | CR-01 (Lab 7) changed BR-15: wallet rule on edit (AC-11-7, TEST-API-96). Written before implementation. |
