@@ -10,6 +10,7 @@ import { HistoryPage } from "./pages/HistoryPage";
 import { SummaryPage } from "./pages/SummaryPage";
 import { LoansPage } from "./pages/LoansPage";
 import { SpendingPage } from "./pages/SpendingPage";
+import { ReportsPage } from "./pages/ReportsPage";
 import { EditTransactionPage } from "./pages/EditTransactionPage";
 import { TopBar } from "./components/TopBar";
 
@@ -22,6 +23,7 @@ const userRoutes: Record<string, () => ReactElement> = {
   "/summary": () => <SummaryPage />,
   "/loans": () => <LoansPage />,
   "/spending": () => <SpendingPage />,
+  "/reports": () => <ReportsPage />,
 };
 const adminRoutes: Record<string, () => ReactElement> = {
   "/admin/users": () => <UsersPage />,
