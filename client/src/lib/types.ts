@@ -30,6 +30,7 @@ export interface Transaction {
   total: string;
   account: AccountRef;
   lines: { account: AccountRef; amount: string }[];
+  isFavorite: boolean; // F-14
   createdAt: string;
 }
 
