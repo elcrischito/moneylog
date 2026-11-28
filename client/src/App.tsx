@@ -8,6 +8,9 @@ import { AccountsPage } from "./pages/AccountsPage";
 import { NewTransactionPage } from "./pages/NewTransactionPage";
 import { HistoryPage } from "./pages/HistoryPage";
 import { SummaryPage } from "./pages/SummaryPage";
+import { LoansPage } from "./pages/LoansPage";
+import { SpendingPage } from "./pages/SpendingPage";
+import { EditTransactionPage } from "./pages/EditTransactionPage";
 import { TopBar } from "./components/TopBar";
 
 // Route table per role. The server enforces the same rules (System SDS §5).
@@ -17,26 +20,38 @@ const userRoutes: Record<string, () => ReactElement> = {
   "/transactions/new": () => <NewTransactionPage />,
   "/transactions": () => <HistoryPage />,
   "/summary": () => <SummaryPage />,
+  "/loans": () => <LoansPage />,
+  "/spending": () => <SpendingPage />,
 };
 const adminRoutes: Record<string, () => ReactElement> = {
   "/admin/users": () => <UsersPage />,
 };
 
+// Routes with a parameter (F-11): /transactions/:id/edit, users only.
+const EDIT = /^\/transactions\/([^/]+)\/edit$/;
+function resolve(path: string, isAdmin: boolean): (() => ReactElement) | undefined {
+  const routes = isAdmin ? adminRoutes : userRoutes;
+  if (routes[path]) return routes[path];
+  const m = !isAdmin ? EDIT.exec(path) : null;
+  return m ? () => <EditTransactionPage id={decodeURIComponent(m[1])} /> : undefined;
+}
+
 function Routes() {
   const { user, loading } = useAuth();
   const path = usePath();
-  const routes = user?.role === "ADMIN" ? adminRoutes : userRoutes;
-  const home = user?.role === "ADMIN" ? "/admin/users" : "/";
+  const isAdmin = user?.role === "ADMIN";
+  const routes = isAdmin ? adminRoutes : userRoutes;
+  const home = isAdmin ? "/admin/users" : "/";
 
   useEffect(() => {
     if (loading) return;
     if (!user && path !== "/login") navigate("/login");
-    else if (user && !routes[path]) navigate(home);
-  }, [loading, user, path, routes, home]);
+    else if (user && !resolve(path, isAdmin)) navigate(home);
+  }, [loading, user, path, isAdmin, home]);
 
   if (loading) return <main className="container">Loading…</main>;
   if (!user) return <LoginPage />;
-  const Page = routes[path] ?? routes[home];
+  const Page = resolve(path, isAdmin) ?? routes[home];
 
   return (
     <>

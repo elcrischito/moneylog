@@ -31,18 +31,29 @@ interface Line {
   amount: string;
 }
 
-export function TransactionForm({ accounts, onSubmit }: { accounts: Account[]; onSubmit: (p: TransactionPayload) => Promise<void> }) {
-  const [kind, setKind] = useState<Kind>("PAYMENT");
-  const [accountId, setAccountId] = useState("");
-  const [date, setDate] = useState(todayIso());
-  const [description, setDescription] = useState("");
-  const [total, setTotal] = useState("");
-  const [lines, setLines] = useState<Line[]>([{ accountId: "", amount: "" }]);
+export function TransactionForm({
+  accounts,
+  onSubmit,
+  initial,
+}: {
+  accounts: Account[];
+  onSubmit: (p: TransactionPayload) => Promise<void>;
+  /** F-11 edit: pre-filled values of the original transaction. */
+  initial?: TransactionPayload;
+}) {
+  const [kind, setKind] = useState<Kind>(initial?.kind ?? "PAYMENT");
+  const [accountId, setAccountId] = useState(initial?.accountId ?? "");
+  const [date, setDate] = useState(initial?.date ?? todayIso());
+  const [description, setDescription] = useState(initial?.description ?? "");
+  const [total, setTotal] = useState(initial?.total ?? "");
+  const [lines, setLines] = useState<Line[]>(initial?.lines.map((l) => ({ ...l })) ?? [{ accountId: "", amount: "" }]);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
 
-  const active = accounts.filter((a) => a.isActive);
+  // F-11: an inactive account is offered only where the original transaction already used it.
+  const kept = useMemo(() => new Set(initial ? [initial.accountId, ...initial.lines.map((l) => l.accountId)] : []), [initial]);
+  const active = accounts.filter((a) => a.isActive || kept.has(a.id));
   const primaryOptions = active.filter((a) => ALLOWED[kind].primary.includes(a.type));
   const lineTypes = ALLOWED[kind].lines;
 
@@ -112,7 +123,7 @@ export function TransactionForm({ accounts, onSubmit }: { accounts: Account[]; o
             <option value="">Choose an account…</option>
             {primaryOptions.map((a) => (
               <option key={a.id} value={a.id}>
-                {a.name}
+                {a.name}{a.isActive ? "" : " (inactive)"}
               </option>
             ))}
           </select>
@@ -147,7 +158,7 @@ export function TransactionForm({ accounts, onSubmit }: { accounts: Account[]; o
                     <optgroup key={g.type} label={g.label}>
                       {g.accounts.map((a) => (
                         <option key={a.id} value={a.id}>
-                          {a.name}
+                          {a.name}{a.isActive ? "" : " (inactive)"}
                         </option>
                       ))}
                     </optgroup>

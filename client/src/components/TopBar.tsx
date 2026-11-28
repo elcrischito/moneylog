@@ -7,6 +7,8 @@ const USER_LINKS = [
   { to: "/transactions/new", label: "New transaction" },
   { to: "/transactions", label: "History" },
   { to: "/summary", label: "Summary" },
+  { to: "/loans", label: "Loans" },
+  { to: "/spending", label: "Spending" },
 ];
 const ADMIN_LINKS = [{ to: "/admin/users", label: "Users" }];
 

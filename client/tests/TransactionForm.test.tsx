@@ -44,3 +44,28 @@ describe("Transaction form", () => {
     expect(date).toHaveValue(todayIso());
   });
 });
+
+// TEST-UI-12 (F-11, AC-11-1): the edit form is pre-filled and submits the edited body.
+import { waitFor } from "@testing-library/react";
+describe("Transaction form — edit (F-11)", () => {
+  it("TEST-UI-12: pre-fills the original and sends the corrected payload", async () => {
+    const onSubmit = vi.fn(async () => {});
+    const inactiveDining = { ...accounts[2], isActive: false };
+    const initial = { kind: "PAYMENT" as const, date: "2026-11-20", description: "Dinner and groceries", accountId: "card", total: "1500.00",
+      lines: [{ accountId: "dining", amount: "900.00" }, { accountId: "groceries", amount: "600.00" }] };
+    render(<TransactionForm accounts={[accounts[0], accounts[1], inactiveDining, accounts[3], accounts[4]]} initial={initial} onSubmit={onSubmit} />);
+
+    expect(screen.getByLabelText("Paid from")).toHaveValue("card");
+    expect(screen.getByLabelText("Date")).toHaveValue("2026-11-20");
+    expect(screen.getByLabelText("Line 1 account")).toHaveValue("dining"); // inactive but used by the original
+    expect(screen.getAllByRole("option", { name: "Dining (inactive)" }).length).toBeGreaterThan(0);
+    expect(screen.getByTestId("remaining")).toHaveTextContent("Remaining to allocate: ฿0.00");
+
+    fireEvent.change(screen.getByLabelText("Total (THB)"), { target: { value: "1200.00" } });
+    fireEvent.change(screen.getByLabelText("Line 1 amount"), { target: { value: "700.00" } });
+    fireEvent.change(screen.getByLabelText("Line 2 amount"), { target: { value: "500.00" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save transaction" }));
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledWith({ ...initial, total: "1200.00",
+      lines: [{ accountId: "dining", amount: "700.00" }, { accountId: "groceries", amount: "500.00" }] }));
+  });
+});

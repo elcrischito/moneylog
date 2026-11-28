@@ -58,3 +58,22 @@ td.num, th.num { text-align: right; white-space: nowrap; }
   .stat .value { font-size: 19px; }
   th, td { padding: 8px 6px; font-size: 13px; }
 }
+
+/* F-09 row actions wrap on narrow screens */
+td.actions { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+
+/* F-10 loans */
+table caption { text-align: left; font-weight: 700; padding: 4px 0 8px; }
+.status-badge { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 13px; border: 1px solid currentColor; }
+.status-open { color: #8a5a00; }
+.status-settled { color: #0b6e4f; }
+.status-overpaid { color: #1f4e9c; }
+dl.totals { display: flex; flex-wrap: wrap; gap: 16px; margin: 0; }
+dl.totals > div { flex: 1 1 140px; }
+dl.totals dt { color: #616e7c; font-size: 14px; }
+dl.totals dd { margin: 2px 0 0; font-size: 20px; font-weight: 700; }
+button.link.danger { color: var(--danger); }
+
+/* F-13 spending bars */
+.bar { background: #eceff3; border-radius: 4px; height: 10px; min-width: 60px; }
+.bar-fill { background: var(--brand); border-radius: 4px; height: 10px; }
