@@ -58,3 +58,6 @@ td.num, th.num { text-align: right; white-space: nowrap; }
   .stat .value { font-size: 19px; }
   th, td { padding: 8px 6px; font-size: 13px; }
 }
+
+/* F-09 row actions wrap on narrow screens */
+td.actions { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
