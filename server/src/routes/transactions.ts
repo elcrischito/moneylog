@@ -57,6 +57,7 @@ transactionsRouter.get(
     const and: Prisma.TransactionWhereInput[] = [];
     if (f.from || f.to) where.date = { ...(f.from ? { gte: toDbDate(f.from) } : {}), ...(f.to ? { lte: toDbDate(f.to) } : {}) };
     if (f.kind) where.kind = f.kind;
+    if (f.favorite !== undefined) where.isFavorite = f.favorite; // F-14
     if (f.min !== undefined || f.max !== undefined) {
       where.totalAmount = { ...(f.min !== undefined ? { gte: f.min } : {}), ...(f.max !== undefined ? { lte: f.max } : {}) };
     }
@@ -135,5 +136,23 @@ transactionsRouter.delete(
     const { count } = await prisma.transaction.deleteMany({ where: { id: req.params.id, ownerId } }); // lines cascade
     if (count === 0) throw notFound("Transaction");
     res.status(204).end();
+  }),
+);
+
+// ---------------------------------------------------------------------------
+// F-14 favorites — contract docs/sprints/sprint-3/F-14-favorites.md
+// Only the flag changes; amounts, lines, dates and balances are untouched.
+// ---------------------------------------------------------------------------
+transactionsRouter.put(
+  "/:id/favorite",
+  asyncHandler(async (req, res) => {
+    const ownerId = req.user!.id;
+    const isFavorite = req.body?.isFavorite;
+    if (typeof isFavorite !== "boolean") {
+      throw new AppError(400, "VALIDATION_ERROR", "isFavorite must be true or false.", [{ field: "isFavorite", message: "Must be a boolean." }]);
+    }
+    const { count } = await prisma.transaction.updateMany({ where: { id: req.params.id, ownerId }, data: { isFavorite } });
+    if (count === 0) throw notFound("Transaction"); // other users' ids look unknown (BR-01, BR-17)
+    res.json({ transaction: await loadTransactionDto(ownerId, req.params.id) });
   }),
 );

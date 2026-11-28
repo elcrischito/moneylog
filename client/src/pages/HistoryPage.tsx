@@ -3,6 +3,7 @@ import { useApi } from "../lib/useApi";
 import { thb } from "../lib/format";
 import type { AccountsResponse, Transaction } from "../lib/types";
 import { FilterBar } from "../components/FilterBar";
+import { FavoriteButton } from "../components/FavoriteButton";
 import { LoadState } from "../components/LoadState";
 import { Link } from "../lib/router";
 import { api, ApiError } from "../lib/api";
@@ -82,7 +83,9 @@ export function HistoryPage() {
               {data.transactions.map((t) => (
                 <Fragment key={t.id}>
                   <tr data-testid="history-row">
-                    <td style={{ whiteSpace: "nowrap" }}>{t.date}</td>
+                    <td style={{ whiteSpace: "nowrap" }}>
+                      <FavoriteButton key={`${t.id}-${t.isFavorite}`} tx={t} onChange={() => query.includes("favorite=") && reload()} /> {t.date}
+                    </td>
                     <td>{t.kind === "PAYMENT" ? "Payment" : "Received"}</td>
                     <td>{t.account.name}</td>
                     <td>{t.description || <span className="muted">—</span>}</td>

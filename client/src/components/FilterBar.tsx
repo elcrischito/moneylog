@@ -10,8 +10,9 @@ export interface Filters {
   q: string;
   min: string;
   max: string;
+  favorite: string; // F-14: "true" or ""
 }
-const EMPTY: Filters = { from: "", to: "", accountId: "", kind: "", q: "", min: "", max: "" };
+const EMPTY: Filters = { from: "", to: "", accountId: "", kind: "", q: "", min: "", max: "", favorite: "" };
 
 /** Query string built from the filled fields only ("" when nothing is filled). */
 export function buildQuery(f: Filters): string {
@@ -76,6 +77,11 @@ export function FilterBar({ accounts, onApply }: { accounts: Account[]; onApply:
       <div>
         <label htmlFor="f-max">Max total</label>
         <input id="f-max" inputMode="decimal" value={f.max} onChange={set("max")} />
+      </div>
+      <div style={{ flex: "0 0 auto", alignSelf: "center" }}>
+        <label className="checkbox">
+          <input type="checkbox" checked={f.favorite === "true"} onChange={(e) => setF((x) => ({ ...x, favorite: e.target.checked ? "true" : "" }))} /> Favorites only
+        </label>
       </div>
       <div style={{ flex: "0 0 auto", display: "flex", gap: 6 }}>
         <button type="submit">Apply</button>
