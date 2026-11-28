@@ -11,6 +11,7 @@ export interface TransactionFilter {
   q?: string;
   min?: number; // satang
   max?: number; // satang
+  favorite?: boolean; // F-14
   limit: number;
 }
 
@@ -65,6 +66,13 @@ export function parseTransactionFilter(query: Record<string, unknown>): Result<T
     else errors.push({ field: k, message: "Use an amount of 0 or more with at most 2 decimals." });
   }
   if (out.min !== undefined && out.max !== undefined && out.min > out.max) errors.push({ field: "min", message: "Min must be at most Max." });
+
+  // F-14: favorite=true|false (exact), anything else is refused.
+  const favorite = typeof query.favorite === "string" && query.favorite !== "" ? query.favorite : undefined;
+  if (favorite !== undefined) {
+    if (favorite === "true" || favorite === "false") out.favorite = favorite === "true";
+    else errors.push({ field: "favorite", message: "Favorite must be true or false." });
+  }
 
   const limit = get("limit");
   if (limit !== undefined) {

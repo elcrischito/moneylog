@@ -32,6 +32,7 @@ describe("History filter bar", () => {
   });
 
   it("buildQuery returns an empty string when nothing is filled", () => {
-    expect(buildQuery({ from: "", to: "", accountId: "", kind: "", q: "  ", min: "", max: "" })).toBe("");
+    expect(buildQuery({ from: "", to: "", accountId: "", kind: "", q: "  ", min: "", max: "", favorite: "" })).toBe("");
+    expect(buildQuery({ from: "", to: "", accountId: "", kind: "", q: "", min: "", max: "", favorite: "true" })).toBe("?favorite=true");
   });
 });
