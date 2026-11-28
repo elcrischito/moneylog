@@ -14,5 +14,7 @@ Accepted Sprint 1 baseline: **v0.1.0 = `c26bebe`** (14 Nov 2026). UAT-accepted r
 | REV-02 | CR-01 × Sprint 2 | F-11 contract | Edits must respect the wallet rule | F-11 contract v1.1 (AC-11-7, TEST-API-96), before implementation | Implemented | v0.2.0 `60e6328` | TEST-API-96 pass |
 | Q-01 | SRS open question | Refunds | How to record a shop refund | No scope change: refunds stay out of scope; correct the purchase with F-11 | Closed | SRS 1.2 (D2) | — |
 | Q-02 | SRS open question | F-09 / F-10 | Borrower name for Loan Given | Account name holds the borrower; one account per borrower | Closed | SRS 1.2 (D2) | AC-10-2 uses "Loan to Ploy" |
+| REV-03 | F-17 contract | TEST-E2E-02 (F-02) | Every role now has a "Password" menu link, so the admin menu is [Users, Password] | Expected link list revised; the BR-02 assertions (no financial link, 403 on the financial API) are unchanged | Done | `f95d258` (PR #74) | TEST-E2E-02 pass |
+| TD-1 | Lab 7 metric action / D2 debt | NFR-08 | E2E suite only ran locally | Playwright runs in the required CI job | Resolved | PR #75 (`fd73b6e`) | CI check 140903112457: E2E 14/14 |
 
 No open defect at 28 Nov 2026 (open Issues are the planned features #66, #67).

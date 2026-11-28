@@ -19,7 +19,7 @@ Version 2.0 (28 Nov 2026, Deliverable 2): status column added. 1.0 = Sprint 1 ba
 | F-13 | Category spending | Expense per expense account with share of total | FR-20, BR-12 | F-07 | 2 | Implemented + tested, released v0.2.0 |
 | F-14 | Favorites | Mark/unmark and list favorite transactions | FR-17, FR-18, BR-01, BR-17 | F-08 | 3 | Implemented + tested (Sprint 3, in the D2 candidate) |
 | F-15 | Duplicate transaction | Open a new editable transaction pre-filled from an existing one | FR-19, BR-17 | F-05, F-06 | 3 | Implemented + tested (Sprint 3, in the D2 candidate) |
-| F-16 | Reports | Monthly income vs expense and net position over time | FR-21 | F-07 | 3 | Contract v1.0; planned (target 6 Dec) |
-| F-17 | Account administration and own password | Admin creates users / resets passwords; user changes own password | FR-06, FR-22, NFR-01 | F-02 | 3 | Contract v1.0; planned (target 8 Dec) |
+| F-16 | Reports | Monthly income vs expense and net position over time | FR-21 | F-07 | 3 | Implemented + tested (Sprint 3, PR #73) |
+| F-17 | Account administration and own password | Admin creates users / resets passwords; user changes own password | FR-06, FR-22, NFR-01 | F-02 | 3 | Implemented + tested (Sprint 3, PR #74) |
 | R-01 | Delivery responsibility | Docker image, CI on every PR, merge gate, GCP deployment from `main`, persistence across redeploy | NFR-06, NFR-07, NFR-08 | all | 1 (design + local) / Lab 5 | Done (Lab 5): CI gate, WIF deploy, version in /api/health |
-| R-02 | Hardening responsibility | Accessibility at 360 px, performance target, regression suite | NFR-09, NFR-10 | all | 1 (core screens) / 3 | 360 px on all E2E; performance check planned (TEST-PERF-01) |
+| R-02 | Hardening responsibility | Accessibility at 360 px, performance target, regression suite | NFR-09, NFR-10 | all | 1 (core screens) / 3 | 360 px on all E2E (in CI since PR #75); TEST-PERF-01 pass locally, GCP run planned 4 Dec |
