@@ -4,7 +4,7 @@
 |---|---|
 | Product | MoneyLog — Personal Money and Expense Logging System (CPE 334 theme 7) |
 | Team | EN-049 `elcrischito` (one member: Mamadou, student ID 69540460047) |
-| Version | 1.1 — 27 Nov 2026: BR-15 changed by CR-01 (Lab 7, Issue #41). 1.0 = Sprint 1 baseline, 14 Nov 2026 |
+| Version | 1.2 — 28 Nov 2026 (Deliverable 2): decisions D-09…D-12 from the Sprint 2/3 contracts, Q-01/Q-02 resolved; no requirement added or removed. 1.1 — 27 Nov 2026: BR-15 changed by CR-01 (Lab 7, Issue #41). 1.0 = Sprint 1 baseline, 14 Nov 2026 |
 | Status | Baseline for Sprints 1–3. Changes are recorded in Section 8. |
 
 ## 1. Stakeholder problem and context
@@ -133,8 +133,12 @@ Period budgets, shared budgets, automatic recurring transactions, bank or card i
 | D-06 | How should the API answer a request for another user's record? | `404 Not Found`, so the API does not reveal that the record exists (BR-01). Administrators get `403` on all financial routes (BR-02). |
 | D-07 | Are financial accounts created by users in Sprint 1? | No. Sprint 1 seeds them (as in the theme's Sprint 1 example); account management is F-09 in Sprint 2. |
 | D-08 | Team size | Team EN-049 has one member (registered as *Solo*). Teammate review is replaced by a written self-review on each PR; this is disclosed in Part F. |
+| D-09 | Can a user delete a financial account? (F-09) | No. Accounts are only **deactivated**, because past transactions point to them. A cash or loan account can be deactivated only at balance 0.00; names are unique per user, case-insensitive; max 100 accounts. |
+| D-10 | Editing an old transaction whose account was later deactivated (F-11) | Allowed when the inactive account keeps the role it had in the original. The CR-01 wallet rule applies to edits, computed without the original transaction; deleting is never blocked by it. |
+| D-11 | Search text semantics (F-12) | Case-insensitive *contains*; `%` and `_` are literal characters (not wildcards). The owner filter is always applied first. |
+| D-12 | Favorites and duplicate (F-14, F-15) | A favorite is a flag on the user's own transaction and changes nothing else. Duplicate is client-side: it pre-fills a new form dated today and saves through the normal create API, so every rule applies and the original is never touched (BR-17). |
 
 | ID | Open question | Planned resolution |
 |---|---|---|
-| Q-01 | How should refunds from a shop be recorded (money back on a card)? | Ask TA; candidate: allow a negative-effect *refund* line type on an Expense account in Sprint 2. |
-| Q-02 | Should Loan Given accounts track the borrower's name separately? | Decide with F-09 in Sprint 2 (currently the account name, e.g. "Loan to Ploy"). |
+| Q-01 | How should refunds from a shop be recorded (money back on a card)? | **Resolved 28 Nov (no scope change):** refunds stay out of scope (Section 3). Workaround documented for users: correct the original purchase with F-11 (edit/delete). |
+| Q-02 | Should Loan Given accounts track the borrower's name separately? | **Resolved with F-09:** no separate field; the account name holds the borrower (e.g. "Loan to Ploy"), and a user may create one Loan Given account per borrower. |
