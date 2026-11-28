@@ -1,6 +1,6 @@
 # System-Level Software Design Specification — MoneyLog
 
-> **Version 1.2 — 28 Nov 2026 (Deliverable 2):** API table and permission matrix updated for F-09…F-15 (implemented) and F-16/F-17 (planned); server modules added: `domain/accounts.ts`, `domain/loans.ts`, `domain/filter.ts`, `domain/spending.ts`, `routes/loans.ts`, `routes/spending.ts`, `services/walletGuard.ts` (CR-01). No data-model change since Sprint 1 (no migration). 1.1 = CR-01 note (27 Nov); 1.0 = Sprint 1 baseline (14 Nov).
+> **Version 1.2 — 28 Nov 2026 (Deliverable 2):** API table and permission matrix updated for F-09…F-17 (all implemented); server modules added: `domain/reports.ts`, `domain/users.ts`, `routes/reports.ts`, `domain/accounts.ts`, `domain/loans.ts`, `domain/filter.ts`, `domain/spending.ts`, `routes/loans.ts`, `routes/spending.ts`, `services/walletGuard.ts` (CR-01). No data-model change since Sprint 1 (no migration). 1.1 = CR-01 note (27 Nov); 1.0 = Sprint 1 baseline (14 Nov).
 
 Version 1.1 (14 Nov 2026). v1.1: the seed also creates *Loan from Mom* (LOAN_TAKEN/OTHER_LOAN), which AC-06-3 (borrowing) needs. 11 starter accounts per user. Requirement IDs refer to [`srs.md`](srs.md), and feature IDs refer to [`features.md`](features.md).
 
@@ -106,8 +106,8 @@ Shared behaviour:
 | `PUT /api/transactions/:id`, `DELETE /api/transactions/:id` | USER | F-11 |
 | `PUT /api/transactions/:id/favorite` | USER | F-14 |
 | `GET /api/spending?from=&to=` | USER | F-13 |
-| `GET /api/reports/monthly?months=` *(planned)* | USER | F-16 |
-| `POST /api/admin/users`, `POST /api/admin/users/:id/password`, `POST /api/auth/password` *(planned)* | ADMIN / ADMIN / any | F-17 |
+| `GET /api/reports/monthly?months=` | USER | F-16 |
+| `POST /api/admin/users`, `POST /api/admin/users/:id/password`, `POST /api/auth/password` | ADMIN / ADMIN / any | F-17 |
 | `GET /api/summary?from=&to=` | USER | F-07 |
 | `GET /api/health`, `GET /api/ready` | public | R-01 |
 
@@ -124,9 +124,9 @@ Shared behaviour:
 | Read history / transaction detail | ✗ 401 | ✔ own only; other user's → 404 | ✗ 403 |
 | Read summary | ✗ 401 | ✔ own only | ✗ 403 |
 | Manage accounts (F-09), loans (F-10), correct (F-11), filter (F-12), spending (F-13), favorites (F-14), duplicate (F-15) | ✗ 401 | ✔ own only; other user's id → 404 or 0 rows | ✗ 403 |
-| Reports (F-16, planned) | ✗ 401 | ✔ own only | ✗ 403 |
-| Create user / reset password (F-17, planned) | ✗ 401 | ✗ 403 | ✔ (not another admin) |
-| Change own password (F-17, planned) | ✗ 401 | ✔ | ✔ |
+| Reports (F-16) | ✗ 401 | ✔ own only | ✗ 403 |
+| Create user / reset password (F-17) | ✗ 401 | ✗ 403 | ✔ (not another admin) |
+| Change own password (F-17) | ✗ 401 | ✔ | ✔ |
 
 Implementation: `requireAuth` loads the session and user on every request. `requireRole('USER')` or `requireRole('ADMIN')` guards each router. Every financial query includes `ownerId: req.user.id`, so another user's record is simply *not found* (decision D-06).
 

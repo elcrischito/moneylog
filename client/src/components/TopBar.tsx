@@ -9,8 +9,10 @@ const USER_LINKS = [
   { to: "/summary", label: "Summary" },
   { to: "/loans", label: "Loans" },
   { to: "/spending", label: "Spending" },
+  { to: "/reports", label: "Reports" },
+  { to: "/password", label: "Password" },
 ];
-const ADMIN_LINKS = [{ to: "/admin/users", label: "Users" }];
+const ADMIN_LINKS = [{ to: "/admin/users", label: "Users" }, { to: "/password", label: "Password" }];
 
 // Links depend on the role (TEST-UI-03). This is only convenience: the API enforces access.
 export function TopBar() {

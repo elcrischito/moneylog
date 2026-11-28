@@ -10,6 +10,8 @@ import { HistoryPage } from "./pages/HistoryPage";
 import { SummaryPage } from "./pages/SummaryPage";
 import { LoansPage } from "./pages/LoansPage";
 import { SpendingPage } from "./pages/SpendingPage";
+import { ReportsPage } from "./pages/ReportsPage";
+import { ChangePasswordPage } from "./pages/ChangePasswordPage";
 import { EditTransactionPage } from "./pages/EditTransactionPage";
 import { TopBar } from "./components/TopBar";
 
@@ -22,9 +24,12 @@ const userRoutes: Record<string, () => ReactElement> = {
   "/summary": () => <SummaryPage />,
   "/loans": () => <LoansPage />,
   "/spending": () => <SpendingPage />,
+  "/reports": () => <ReportsPage />,
+  "/password": () => <ChangePasswordPage />,
 };
 const adminRoutes: Record<string, () => ReactElement> = {
   "/admin/users": () => <UsersPage />,
+  "/password": () => <ChangePasswordPage />,
 };
 
 // Routes with a parameter (F-11): /transactions/:id/edit, users only.

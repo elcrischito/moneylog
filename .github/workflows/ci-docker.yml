@@ -7,7 +7,8 @@
 #     2) as a REUSABLE workflow called by deploy.yml (`workflow_call`) so the
 #        deploy only starts after these checks pass.
 #   Steps: offline deploy-script tests -> backend tests (real PostgreSQL service)
-#          -> frontend tests + build -> verify the production Dockerfile builds.
+#          -> frontend tests + build -> end-to-end tests (Playwright)
+#          -> verify the production Dockerfile builds.
 #   It does NOT deploy anything.
 #
 # ⚠️ DO NOT RENAME (the lab guide refers to these names):
@@ -145,6 +146,33 @@ jobs:
           npm ci
           npm test
           npm run build
+
+      # ------------------------------------------------------------------------
+      # 5b. End-to-end (Playwright, desktop + 360 px) against the real API and
+      #     database of this job. Added for Deliverable 2 (technical debt TD-1):
+      #     a UI regression now fails the required check before merge.
+      # ------------------------------------------------------------------------
+      - name: End-to-end tests (Playwright)
+        env:
+          DATABASE_URL: postgresql://moneylog:moneylog@localhost:5432/moneylog?schema=public
+          PORT: "4000"
+        run: |
+          (cd server && node dist/index.js > /tmp/api.log 2>&1 &)
+          (cd client && npx vite --port 5173 --strictPort > /tmp/vite.log 2>&1 &)
+          for i in $(seq 1 30); do curl -fsS http://localhost:4000/api/health && curl -fsS -o /dev/null http://localhost:5173/login && break; sleep 2; done
+          cd client
+          npx playwright install --with-deps chromium
+          npx playwright test --reporter=list
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: playwright-results
+          path: |
+            client/test-results
+            /tmp/api.log
+            /tmp/vite.log
+          retention-days: 7
 
       # ------------------------------------------------------------------------
       # 6. Make sure the production image still builds (image is not pushed here)
